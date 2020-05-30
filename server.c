@@ -32,8 +32,13 @@ void setHttpHeader(char **httpContent){
 int main(void)
 {
     char *httpContent = calloc(8000, sizeof(char));
-    char httpHeader[80] = "HTTP/1.1 200 OK\r\n\n";
+    char httpHeader[80] = "HTTP/1.1 200 OK\n";
     strcat(httpContent, httpHeader);
+    char contentHeader[80] = "Content-type: text/html\n";
+    strcat(httpContent, contentHeader);
+    char endOfHeaders[80] = "\n";
+    strcat(httpContent, endOfHeaders);
+    
 
     // Socket setup: creates an endpoint for communication, returns a descriptor
     // -----------------------------------------------------------------------------------------------------------------
