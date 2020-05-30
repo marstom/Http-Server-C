@@ -29,15 +29,26 @@ void setHttpHeader(char **httpContent){
     (*httpContent) = content;
 }
 
+void manageFile(char **httpContent){
+    char *content = *httpContent;
+    char httpHeader[80] = "HTTP/1.1 200 OK\n";
+    strcat(content, httpHeader);
+    char contentHeader[80] = "Content-type: text/html\n";
+    strcat(content, contentHeader);
+    char endOfHeaders[80] = "\n";
+    strcat(content, endOfHeaders);
+    setHttpHeader(httpContent);  // Custom function to set header
+    (*httpContent) = content;
+}
+
+// working for text content only, not binary
+void cleanFileContent(char **httpContent){
+    *httpContent[0] = '\0';
+}
+
 int main(void)
 {
     char *httpContent = calloc(8000, sizeof(char));
-    char httpHeader[80] = "HTTP/1.1 200 OK\n";
-    strcat(httpContent, httpHeader);
-    char contentHeader[80] = "Content-type: text/html\n";
-    strcat(httpContent, contentHeader);
-    char endOfHeaders[80] = "\n";
-    strcat(httpContent, endOfHeaders);
     
 
     // Socket setup: creates an endpoint for communication, returns a descriptor
@@ -73,14 +84,24 @@ int main(void)
         return 1;
     }
     report(&serverAddress);     // Custom report function
-    setHttpHeader(&httpContent);  // Custom function to set header
     int clientSocket;
 
     // Wait for a connection, create a connected socket if a connection is pending
     // -----------------------------------------------------------------------------------------------------------------
     while(1) {
         clientSocket = accept(serverSocket, NULL, NULL);
+        manageFile(&httpContent);
         send(clientSocket, httpContent, strlen(httpContent), 0);
+
+        char buff[8000];
+        if(recv(clientSocket, buff, 5000, 0) <0){
+            puts("no reply\n");
+        }else{
+            puts("reply\n");
+            puts(buff);
+        }
+
+        cleanFileContent(&httpContent);
         close(clientSocket);
     }
     free(httpContent);
