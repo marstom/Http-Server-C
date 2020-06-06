@@ -1,0 +1,15 @@
+GET /obrazek.png HTTP/1.1
+naglowek: wartosc
+Content-Type: application/javascript
+User-Agent: PostmanRuntime/7.25.0
+Accept: */*
+Postman-Token: 68673437-be5d-476a-867b-b8e7b222484c
+Host: 127.0.0.1:8001
+Accept-Encoding: gzip, deflate, br
+Connection: keep-alive
+Content-Length: 24
+
+{
+
+        "he": "adsfsefes"
+}
