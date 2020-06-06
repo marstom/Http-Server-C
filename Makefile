@@ -1,5 +1,5 @@
 CFLAGS=-g -Wall -Wextra
-OUT=server
+OUT=marstom_server
 LIBS=
 SOURCES=server.c
 

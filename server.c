@@ -4,6 +4,7 @@
 #include <errno.h>
 #include <unistd.h>
 #include <netdb.h> // for getnameinfo()
+#include <signal.h>
 
 // Usual socket headers
 #include <sys/types.h>
@@ -16,6 +17,13 @@
 #define BACKLOG 10  // Passed to listen()
 
 void report(struct sockaddr_in *serverAddress);
+
+static volatile int keepRunning = 1;
+
+void intHandler(int dummy){
+    puts("User send Ctrl+c");
+    keepRunning = 0;
+}
 
 void setHttpHeader(char **httpContent){
     char *content = *httpContent;
@@ -43,6 +51,12 @@ void manageFile(char **httpContent){
     (*httpContent) = content;
 }
 
+void loopbackResponse(char **httpContent, char *buff){
+    char *content = *httpContent;
+    strcat(content, buff);
+    (*httpContent) = content;
+}
+
 // working for text content only, not binary
 void cleanFileContent(char **httpContent){
     *httpContent[0] = '\0';
@@ -50,6 +64,7 @@ void cleanFileContent(char **httpContent){
 
 int main(void)
 {
+    signal(SIGINT ,intHandler);
     char *httpContent = calloc(8000, sizeof(char));
     
 
@@ -60,6 +75,14 @@ int main(void)
         SOCK_STREAM,  // Type: specifies communication semantics
         0             // Protocol: 0 because there is a single protocol for the specified family
     );
+
+    int _ok = 1;
+    if(setsockopt(serverSocket, SOL_SOCKET,SO_REUSEADDR, &_ok, sizeof(int)) == -1){
+        perror("Unable set socket options.");
+        exit(1);
+    }
+
+    printf("Socket number %d \n", serverSocket);
 
     // Construct local address structure
     // -----------------------------------------------------------------------------------------------------------------
@@ -72,11 +95,18 @@ int main(void)
     // -----------------------------------------------------------------------------------------------------------------
     // bind() assigns the address specified by serverAddress to the socket
     // referred to by the file descriptor serverSocket.
-    bind(
+    puts("binding\n");
+    if(bind(
         serverSocket,                         // file descriptor referring to a socket
         (struct sockaddr *) &serverAddress,   // Address to be assigned to the socket
         sizeof(serverAddress)                 // Size (bytes) of the address structure
-    );
+    ) == -1){
+        perror("Unable to bind!");
+        exit(1);
+    }else{
+        puts("listen...");
+    }
+    puts("binded\n");
 
     // Mark socket to listen for incoming connections
     // -----------------------------------------------------------------------------------------------------------------
@@ -84,30 +114,41 @@ int main(void)
     if (listening < 0) {
         printf("Error: The server is not listening.\n");
         return 1;
+    } else {
+        puts("listening\n");
     }
     report(&serverAddress);     // Custom report function
+    puts("plug report function\n");
     int clientSocket;
 
     // Wait for a connection, create a connected socket if a connection is pending
     // -----------------------------------------------------------------------------------------------------------------
-    while(1) {
+    while(keepRunning) {
         clientSocket = accept(serverSocket, NULL, NULL);
+        puts("\nOpening socket.....\n");
         manageFile(&httpContent);
+        puts("......Waiting for request....\n");
         send(clientSocket, httpContent, strlen(httpContent), 0);
-
+        puts("waoitin...\n");
         char buff[8000];
         if(recv(clientSocket, buff, 5000, 0) < 0){
             puts("no reply\n");
         }else{
             puts("reply\n");
             puts(buff);
+            //loopbackResponse(&httpContent, buff);
+            // manageFile(&httpContent);
+            // puts(httpContent);
         }
+        puts(".....received.........\n");
         memset(buff, '\0', 8000);
-
         cleanFileContent(&httpContent);
         close(clientSocket);
+        puts("..............closed socket\n");
     }
     free(httpContent);
+    close(serverSocket);
+    puts("memory fried\n");
     return 0;
 }
 
