@@ -24,13 +24,6 @@ const char *CONTENT_JPEG = "file/jpeg";
 
 void report(struct sockaddr_in *serverAddress);
 
-static volatile int keepRunning = 1;
-
-void intHandler(int dummy){
-    puts("User send Ctrl+c");
-    keepRunning = 0;
-    exit(1);
-}
 
 void setHttpHeader(char **httpContent){
     char *content = *httpContent;
@@ -45,7 +38,7 @@ void setHttpHeader(char **httpContent){
     (*httpContent) = content;
 }
 
-void setBasicHeaders(char **httpContent, char *contentType){
+void setBasicHeaders(char **httpContent, const char *contentType){
     char *content = *httpContent;
     // http verion and status
     char httpHeader[80] = "HTTP/1.1 200 OK\n";
@@ -79,13 +72,34 @@ void manageFile(char **httpContent){
     (*httpContent) = content;
 }
 
+/*
+Content - will be send to client (Browser / Postman)
+Buff - data received from server
+*/
 void loopbackResponse(char **httpContent, char *buff){
     char *content = *httpContent;
-    setBasicHeaders(&content, CONTENT_HTML);
     
-    strcat(content, "<h1>To ja</h1>");
+    prepareClientResponse(&content);
+    parseClientRequest(buff);
     (*httpContent) = content;
 }
+
+
+void prepareClientResponse(char **response){
+    char *content = *response;
+    setBasicHeaders(&content, CONTENT_HTML);
+    strcat(content, "<h1>To ja</h1>");
+    (*response) = content;
+}
+
+void parseClientRequest(char *request){
+    puts("request from client\n-----------\n");
+    puts(request);
+    puts("-----------------\n");
+    
+}
+
+
 
 // working for text content only, not binary
 void cleanFileContent(char **httpContent){
@@ -94,10 +108,7 @@ void cleanFileContent(char **httpContent){
 
 int main(void)
 {
-    signal(SIGINT ,intHandler);
     char *httpContent = calloc(8000, sizeof(char));
-    
-
     // Socket setup: creates an endpoint for communication, returns a descriptor
     // -----------------------------------------------------------------------------------------------------------------
     int serverSocket = socket(
@@ -145,24 +156,22 @@ int main(void)
 
     // Wait for a connection, create a connected socket if a connection is pending
     // -----------------------------------------------------------------------------------------------------------------
-    while(keepRunning) {
+    while(1) {
         clientSocket = accept(serverSocket, NULL, NULL);
         //manageFile(&httpContent);
         char buff[8000];
         if(recv(clientSocket, buff, 5000, 0) < 0){
             puts("non response\n");
         }else{
-            puts(buff);
+            //puts(buff);
             loopbackResponse(&httpContent, buff);
             //manageFile(&httpContent);
-            puts(httpContent);
+            // puts(httpContent);
         }
-        puts(".....received.........\n");
         send(clientSocket, httpContent, strlen(httpContent), 0);
         memset(buff, '\0', 8000);
         cleanFileContent(&httpContent);
         close(clientSocket);
-        puts("..............closed socket\n");
     }
     free(httpContent);
     close(serverSocket);
