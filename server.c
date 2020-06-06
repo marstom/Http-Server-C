@@ -20,7 +20,8 @@ void report(struct sockaddr_in *serverAddress);
 void setHttpHeader(char **httpContent){
     char *content = *httpContent;
     // File object to return
-    FILE *htmlData = fopen("index.html", "r");
+    //FILE *htmlData = fopen("index.html", "r");
+    FILE *htmlData = fopen("blank.json", "r");
 
     char line[100];
     while (fgets(line, 100, htmlData) != 0) {
@@ -33,7 +34,8 @@ void manageFile(char **httpContent){
     char *content = *httpContent;
     char httpHeader[80] = "HTTP/1.1 200 OK\n";
     strcat(content, httpHeader);
-    char contentHeader[80] = "Content-type: text/html\n";
+    // char contentHeader[80] = "Content-type: text/html\n";
+    char contentHeader[80] = "Content-type: application/json\n";
     strcat(content, contentHeader);
     char endOfHeaders[80] = "\n";
     strcat(content, endOfHeaders);
@@ -94,12 +96,13 @@ int main(void)
         send(clientSocket, httpContent, strlen(httpContent), 0);
 
         char buff[8000];
-        if(recv(clientSocket, buff, 5000, 0) <0){
+        if(recv(clientSocket, buff, 5000, 0) < 0){
             puts("no reply\n");
         }else{
             puts("reply\n");
             puts(buff);
         }
+        memset(buff, '\0', 8000);
 
         cleanFileContent(&httpContent);
         close(clientSocket);
