@@ -16,6 +16,12 @@
 #define SIZE 1024
 #define BACKLOG 10  // Passed to listen()
 
+
+const char *CONTENT_JSON = "application/json";
+const char *CONTENT_HTML = "text/html";
+const char *CONTENT_PNG = "file/png";
+const char *CONTENT_JPEG = "file/jpeg";
+
 void report(struct sockaddr_in *serverAddress);
 
 static volatile int keepRunning = 1;
@@ -23,6 +29,7 @@ static volatile int keepRunning = 1;
 void intHandler(int dummy){
     puts("User send Ctrl+c");
     keepRunning = 0;
+    exit(1);
 }
 
 void setHttpHeader(char **httpContent){
@@ -36,6 +43,22 @@ void setHttpHeader(char **httpContent){
         strcat(content, line);
     }
     (*httpContent) = content;
+}
+
+void setBasicHeaders(char **httpContent, char *contentType){
+    char *content = *httpContent;
+    char httpHeader[80] = "HTTP/1.1 200 OK\n";
+    strcat(content, httpHeader);
+    char contentHeader[80];
+    contentHeader[0] = '\0'; // memory has random data, I must clean it first
+    strcat(contentHeader, "Content-type: ");
+    strcat(contentHeader, contentType);
+    strcat(contentHeader, "\n");
+    strcat(content, contentHeader);
+    
+    char endOfHeaders[80] = "\n";
+    strcat(content, endOfHeaders);
+    (*httpContent) = content;   
 }
 
 void manageFile(char **httpContent){
@@ -53,6 +76,8 @@ void manageFile(char **httpContent){
 
 void loopbackResponse(char **httpContent, char *buff){
     char *content = *httpContent;
+    setBasicHeaders(&content, CONTENT_HTML);
+    
     strcat(content, buff);
     (*httpContent) = content;
 }
@@ -95,7 +120,6 @@ int main(void)
     // -----------------------------------------------------------------------------------------------------------------
     // bind() assigns the address specified by serverAddress to the socket
     // referred to by the file descriptor serverSocket.
-    puts("binding\n");
     if(bind(
         serverSocket,                         // file descriptor referring to a socket
         (struct sockaddr *) &serverAddress,   // Address to be assigned to the socket
@@ -103,44 +127,33 @@ int main(void)
     ) == -1){
         perror("Unable to bind!");
         exit(1);
-    }else{
-        puts("listen...");
     }
-    puts("binded\n");
-
     // Mark socket to listen for incoming connections
     // -----------------------------------------------------------------------------------------------------------------
     int listening = listen(serverSocket, BACKLOG);
     if (listening < 0) {
         printf("Error: The server is not listening.\n");
         return 1;
-    } else {
-        puts("listening\n");
     }
     report(&serverAddress);     // Custom report function
-    puts("plug report function\n");
     int clientSocket;
 
     // Wait for a connection, create a connected socket if a connection is pending
     // -----------------------------------------------------------------------------------------------------------------
     while(keepRunning) {
         clientSocket = accept(serverSocket, NULL, NULL);
-        puts("\nOpening socket.....\n");
-        manageFile(&httpContent);
-        puts("......Waiting for request....\n");
-        send(clientSocket, httpContent, strlen(httpContent), 0);
-        puts("waoitin...\n");
+        //manageFile(&httpContent);
         char buff[8000];
         if(recv(clientSocket, buff, 5000, 0) < 0){
-            puts("no reply\n");
+            puts("non response\n");
         }else{
-            puts("reply\n");
             puts(buff);
-            //loopbackResponse(&httpContent, buff);
-            // manageFile(&httpContent);
-            // puts(httpContent);
+            loopbackResponse(&httpContent, buff);
+            //manageFile(&httpContent);
+            puts(httpContent);
         }
         puts(".....received.........\n");
+        send(clientSocket, httpContent, strlen(httpContent), 0);
         memset(buff, '\0', 8000);
         cleanFileContent(&httpContent);
         close(clientSocket);
@@ -152,8 +165,7 @@ int main(void)
     return 0;
 }
 
-void report(struct sockaddr_in *serverAddress)
-{
+void report(struct sockaddr_in *serverAddress){
     char hostBuffer[INET6_ADDRSTRLEN];
     char serviceBuffer[NI_MAXSERV]; // defined in `<netdb.h>`
     socklen_t addr_len = sizeof(*serverAddress);
