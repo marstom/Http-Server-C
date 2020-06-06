@@ -47,8 +47,13 @@ void setHttpHeader(char **httpContent){
 
 void setBasicHeaders(char **httpContent, char *contentType){
     char *content = *httpContent;
+    // http verion and status
     char httpHeader[80] = "HTTP/1.1 200 OK\n";
     strcat(content, httpHeader);
+    // cookies
+    char cookie[120] = "Set-Cookie: CIASTKO=Mojeciastko;\n";
+    strcat(content, cookie);
+    
     char contentHeader[80];
     contentHeader[0] = '\0'; // memory has random data, I must clean it first
     strcat(contentHeader, "Content-type: ");
@@ -78,7 +83,7 @@ void loopbackResponse(char **httpContent, char *buff){
     char *content = *httpContent;
     setBasicHeaders(&content, CONTENT_HTML);
     
-    strcat(content, buff);
+    strcat(content, "<h1>To ja</h1>");
     (*httpContent) = content;
 }
 
