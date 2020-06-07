@@ -71,7 +71,7 @@ void getSplittedLine(HeaderContent *hc, char **array, int lineNumber){
     char *content = strtok(temp, separator);
     size_t lineNo = 0;
     while(content != NULL){
-        array[lineNo] = calloc(strlen(content)+1, sizeof(char)); // tutaj się wywala alokacja pamięci
+        array[lineNo] = calloc(strlen(content)+1, sizeof(char));
         strcpy(array[lineNo], content);
         content = strtok(NULL, separator);
         lineNo++;

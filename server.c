@@ -53,7 +53,7 @@ size_t loopbackResponse(char **httpContent, char *request){
 
     char **splittedLine = malloc(sizeof(char*) * 500);
     getSplittedLine(headerContent, splittedLine, 0);
-    char* filename = calloc(100, sizeof(char)); // ./image.png // problem z alkoacją index html
+    char* filename = calloc(100, sizeof(char));
     strcat(filename, ".");
     strcat(filename, splittedLine[1]);
     puts(filename);
@@ -210,7 +210,7 @@ int main(void)
         }else{
             contentLength = loopbackResponse(&httpContent, buff);
         }
-        send(clientSocket, httpContent, contentLength, 0); // tu jest pies pogrzebany , jak wysyłam obrazek to /0 bajt rozwali wszytko
+        send(clientSocket, httpContent, contentLength, 0);
         memset(buff, '\0', 8000);
         cleanFileContent(&httpContent);
         close(clientSocket);
