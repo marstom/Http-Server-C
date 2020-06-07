@@ -1,7 +1,7 @@
 CFLAGS=-g -Wall -Wextra
-OUT=server
+OUT=marstom_server
 LIBS=
-SOURCES=server.c
+SOURCES=server.c ./utils/split_string.c
 
 CC=gcc
 
