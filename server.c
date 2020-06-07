@@ -46,37 +46,68 @@ size_t loopbackResponse(char **httpContent, char *request){
 
     puts("request from client\n-----------\n");
     // puts(request);
+    size_t contentLength = 0;
     HeaderContent *headerContent;
     headerContent = malloc(sizeof(HeaderContent));
     initHeaderContent(&headerContent, request);
 
     char **splittedLine = malloc(sizeof(char*) * 500);
     getSplittedLine(headerContent, splittedLine, 0);
-    char* filename = calloc(20, sizeof(char)); // ./image.png
+    char* filename = calloc(100, sizeof(char)); // ./image.png // problem z alkoacją index html
     strcat(filename, ".");
     strcat(filename, splittedLine[1]);
     puts(filename);
     puts("-----------------\n");
 
-
-    // Image handler
-    setBasicHeaders(&response, CONTENT_PNG);
-    FILE *data = fopen(filename, "rb");
-    fseek(data, 0, SEEK_END);
-    size_t fsize = ftell(data);
-    fseek(data, 0, SEEK_SET);
-    char *buffer = malloc(fsize+1);
-    size_t bytesRead = fread(buffer, 1, fsize, data);
-    size_t responseLen = strlen(response);
-    fclose(data);
-    for (size_t i = 0; i < bytesRead; i++){
-        response[responseLen + i] = buffer[i];
+    if(strstr(filename, "png") != NULL){
+        // Image handler
+        setBasicHeaders(&response, CONTENT_PNG);
+        FILE *data = fopen(filename, "rb");
+        fseek(data, 0, SEEK_END);
+        size_t fsize = ftell(data);
+        fseek(data, 0, SEEK_SET);
+        char *buffer = malloc(fsize+1);
+        size_t bytesRead = fread(buffer, 1, fsize, data);
+        size_t responseLen = strlen(response);
+        fclose(data);
+        for (size_t i = 0; i < bytesRead; i++){
+            response[responseLen + i] = buffer[i];
+        }
+        buffer[fsize] = 0;
+        size_t payloadLen = fsize;
+        // end of image handler
+        contentLength = responseLen + payloadLen;
+    }else if(strstr(filename, "html") != NULL){
+        setBasicHeaders(&response, CONTENT_HTML);
+        FILE *data = fopen(filename, "r");
+        char line[100];
+        while (fgets(line, 100, data) != 0) {
+            strcat(response, line);
+        }
+        fclose(data);
+        contentLength = strlen(response);
+    }else if(strstr(filename, "css") != NULL){
+        setBasicHeaders(&response, CONTENT_CSS);
+        FILE *data = fopen(filename, "r");
+        char line[100];
+        while (fgets(line, 100, data) != 0) {
+            strcat(response, line);
+        }
+        fclose(data);
+        contentLength = strlen(response);
+    }else if(strstr(filename, "js") != NULL){
+        setBasicHeaders(&response, CONTENT_JAVASCRIPT);
+        FILE *data = fopen(filename, "r");
+        char line[100];
+        while (fgets(line, 100, data) != 0) {
+            strcat(response, line);
+        }
+        fclose(data);
+        contentLength = strlen(response);
     }
-    buffer[fsize] = 0;
-    size_t payloadLen = fsize;
-    // end of image handler
 
-    size_t contentLength = responseLen + payloadLen;
+
+
     (*httpContent) = response;
     return contentLength;
 }

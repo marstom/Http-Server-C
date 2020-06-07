@@ -10,6 +10,8 @@
 
 const char *CONTENT_JSON = "application/json";
 const char *CONTENT_HTML = "text/html";
+const char *CONTENT_JAVASCRIPT = "text/javascript";
+const char *CONTENT_CSS = "text/css";
 const char *CONTENT_PNG = "image/png";
 const char *CONTENT_JPEG = "image/jpeg";
 

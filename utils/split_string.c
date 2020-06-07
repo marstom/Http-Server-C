@@ -16,7 +16,7 @@ size_t initHeaderContent(HeaderContent **hc, char *str){
 
 size_t __allocLines(char *str, HeaderContent **hc){
     HeaderContent *h = *hc;
-    char *temp = calloc(strlen(str), sizeof(char));
+    char *temp = calloc(strlen(str)+1, sizeof(char));
     strcpy(temp, str);
     char *separator ="\n";
     char *content = strtok(temp, separator);
@@ -33,13 +33,13 @@ size_t __allocLines(char *str, HeaderContent **hc){
 
 void __allocSentences(char *str, HeaderContent **hc){
     HeaderContent *h = *hc;
-    char *temp = calloc(strlen(str), sizeof(char));
+    char *temp = calloc(strlen(str)+1, sizeof(char));
     strcpy(temp, str);
     char *separator ="\r\n";
     char *content = strtok(temp, separator);
     size_t lineNumber = 0;
     while(content != NULL){
-        size_t sentenceLen = strlen(content)+5;
+        size_t sentenceLen = strlen(content)+1;
         h->lines[lineNumber] = calloc(sentenceLen, sizeof(char));
         lineNumber++;
         content = strtok(NULL, separator);
@@ -50,7 +50,7 @@ void __allocSentences(char *str, HeaderContent **hc){
 
 void __fill_content(char *str, HeaderContent **hc){
     HeaderContent *h = *hc;
-    char *temp = calloc(strlen(str), sizeof(char));
+    char *temp = calloc(strlen(str)+1, sizeof(char));
     strcpy(temp, str);
     char *separator ="\r\n";
     char *content = strtok(temp, separator);
@@ -65,13 +65,13 @@ void __fill_content(char *str, HeaderContent **hc){
 
 void getSplittedLine(HeaderContent *hc, char **array, int lineNumber){
     char *line = hc->lines[lineNumber];
-    char *temp = calloc(strlen(line), sizeof(char));
+    char *temp = calloc(strlen(line)+1, sizeof(char));
     strcpy(temp, line);
     char *separator =" ";
     char *content = strtok(temp, separator);
     size_t lineNo = 0;
     while(content != NULL){
-        array[lineNo] = calloc(strlen(content)+1, sizeof(char));
+        array[lineNo] = calloc(strlen(content)+1, sizeof(char)); // tutaj się wywala alokacja pamięci
         strcpy(array[lineNo], content);
         content = strtok(NULL, separator);
         lineNo++;
