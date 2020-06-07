@@ -10,8 +10,8 @@
 
 const char *CONTENT_JSON = "application/json";
 const char *CONTENT_HTML = "text/html";
-const char *CONTENT_PNG = "file/png";
-const char *CONTENT_JPEG = "file/jpeg";
+const char *CONTENT_PNG = "image/png";
+const char *CONTENT_JPEG = "image/jpeg";
 
 
 
@@ -24,8 +24,9 @@ void manageFile(char **httpContent);
 /*
 Content - will be send to client (Browser / Postman)
 Buff - data received from server
+:return content length, must know how many bytes send
 */
-void loopbackResponse(char **httpContent, char *buff);
+size_t loopbackResponse(char **httpContent, char *buff);
 
 /*
 Now it's really basic, max request lines nuber are 500

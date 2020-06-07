@@ -30,20 +30,24 @@ void setHttpHeader(char **httpContent){
 void setBasicHeaders(char **httpContent, const char *contentType){
     char *content = *httpContent;
     // http verion and status
-    char httpHeader[80] = "HTTP/1.1 200 OK\n";
+    char httpHeader[80] = "HTTP/1.1 200 OK\r\n";
     strcat(content, httpHeader);
     // cookies
-    char cookie[120] = "Set-Cookie: CIASTKO=Mojeciastko;\n";
+    char cookie[120] = "Set-Cookie: CIASTKO=Mojeciastko;\r\n";
     strcat(content, cookie);
     
     char contentHeader[80];
     contentHeader[0] = '\0'; // memory has random data, I must clean it first
     strcat(contentHeader, "Content-type: ");
     strcat(contentHeader, contentType);
-    strcat(contentHeader, "\n");
+    strcat(contentHeader, "\r\n");
     strcat(content, contentHeader);
+
+    // file lenght
+    // strcat(content, "Content-Length: 450\r\n");
     
-    char endOfHeaders[80] = "\n";
+    
+    char endOfHeaders[80] = "\r\n";
     strcat(content, endOfHeaders);
     (*httpContent) = content;   
 }
@@ -61,17 +65,13 @@ void manageFile(char **httpContent){
     (*httpContent) = content;
 }
 
-void loopbackResponse(char **httpContent, char *request){
+size_t loopbackResponse(char **httpContent, char *request){
     char *response = *httpContent;
     
-    parseClientRequest(request);
-    prepareClientResponse(&response);
-    (*httpContent) = response;
-}
+    // parseClientRequest(request);
+    // prepareClientResponse(&response);
 
 
-
-void parseClientRequest(char *request){
     puts("request from client\n-----------\n");
     // puts(request);
     HeaderContent *headerContent;
@@ -87,12 +87,39 @@ void parseClientRequest(char *request){
     puts(splittedLine[1]);
 
     puts("-----------------\n");
+
+    setBasicHeaders(&response, CONTENT_PNG);
+
+    FILE *data = fopen(filename, "rb");
+    fseek(data, 0, SEEK_END);
+    size_t fsize = ftell(data);
+    fseek(data, 0, SEEK_SET);
+    char *buffer = malloc(fsize+1);
+    size_t bytesRead = fread(buffer, 1, fsize, data);
+    size_t responseLen = strlen(response);
+
+    fclose(data);
+    for (size_t i = 0; i < bytesRead; i++){
+        response[responseLen + i] = buffer[i];
+    }
+    buffer[fsize] = 0;
+    size_t payloadLen = fsize;
+
+    size_t contentLength = responseLen + payloadLen;
+    (*httpContent) = response;
+    return contentLength;
+}
+
+
+
+void parseClientRequest(char *request){
+
 }
 
 void prepareClientResponse(char **response){
     char *content = *response;
-    setBasicHeaders(&content, CONTENT_HTML);
-    strcat(content, "<h1>To ja</h1>");
+    // setBasicHeaders(&content, CONTENT_HTML);
+    // strcat(content, "<h1>To ja</h1>");
     (*response) = content;
 }
 
@@ -126,6 +153,7 @@ void report(struct sockaddr_in *serverAddress){
 int main(void)
 {
     char *httpContent = calloc(8000, sizeof(char));
+    size_t contentLength = 0;
     // Socket setup: creates an endpoint for communication, returns a descriptor
     // -----------------------------------------------------------------------------------------------------------------
     int serverSocket = socket(
@@ -179,13 +207,11 @@ int main(void)
         char buff[8000];
         if(recv(clientSocket, buff, 5000, 0) < 0){
             puts("non response\n");
+            contentLength = 0;
         }else{
-            //puts(buff);
-            loopbackResponse(&httpContent, buff);
-            //manageFile(&httpContent);
-            // puts(httpContent);
+            contentLength = loopbackResponse(&httpContent, buff);
         }
-        send(clientSocket, httpContent, strlen(httpContent), 0);
+        send(clientSocket, httpContent, contentLength, 0); // tu jest pies pogrzebany , jak wysyłam obrazek to /0 bajt rozwali wszytko
         memset(buff, '\0', 8000);
         cleanFileContent(&httpContent);
         close(clientSocket);
