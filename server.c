@@ -1,6 +1,6 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include "server.h"
+#include "utils/split_string.h"
+
 #include <errno.h>
 #include <unistd.h>
 #include <netdb.h> // for getnameinfo()
@@ -12,17 +12,6 @@
 #include <netinet/in.h>
 
 #include <arpa/inet.h>
-
-#define SIZE 1024
-#define BACKLOG 10  // Passed to listen()
-
-
-const char *CONTENT_JSON = "application/json";
-const char *CONTENT_HTML = "text/html";
-const char *CONTENT_PNG = "file/png";
-const char *CONTENT_JPEG = "file/jpeg";
-
-void report(struct sockaddr_in *serverAddress);
 
 
 void setHttpHeader(char **httpContent){
@@ -72,18 +61,33 @@ void manageFile(char **httpContent){
     (*httpContent) = content;
 }
 
-/*
-Content - will be send to client (Browser / Postman)
-Buff - data received from server
-*/
-void loopbackResponse(char **httpContent, char *buff){
-    char *content = *httpContent;
+void loopbackResponse(char **httpContent, char *request){
+    char *response = *httpContent;
     
-    prepareClientResponse(&content);
-    parseClientRequest(buff);
-    (*httpContent) = content;
+    parseClientRequest(request);
+    prepareClientResponse(&response);
+    (*httpContent) = response;
 }
 
+
+
+void parseClientRequest(char *request){
+    puts("request from client\n-----------\n");
+    // puts(request);
+    HeaderContent *headerContent;
+    headerContent = malloc(sizeof(HeaderContent));
+    initHeaderContent(&headerContent, request);
+
+    char **splittedLine = malloc(sizeof(char*) * 500);
+    getSplittedLine(headerContent, splittedLine, 0);
+    char* filename = calloc(20, sizeof(char)); // ./image.png
+    strcat(filename, ".");
+    strcat(filename, splittedLine[1]);
+    puts(filename);
+    puts(splittedLine[1]);
+
+    puts("-----------------\n");
+}
 
 void prepareClientResponse(char **response){
     char *content = *response;
@@ -92,18 +96,31 @@ void prepareClientResponse(char **response){
     (*response) = content;
 }
 
-void parseClientRequest(char *request){
-    puts("request from client\n-----------\n");
-    puts(request);
-    puts("-----------------\n");
-    
-}
 
-
-
-// working for text content only, not binary
 void cleanFileContent(char **httpContent){
     *httpContent[0] = '\0';
+}
+
+/*
+Cannot be in h file, don't know why
+*/
+void report(struct sockaddr_in *serverAddress){
+    char hostBuffer[INET6_ADDRSTRLEN];
+    char serviceBuffer[NI_MAXSERV]; // defined in `<netdb.h>`
+    socklen_t addr_len = sizeof(*serverAddress);
+    int err = getnameinfo(
+        (struct sockaddr *) serverAddress,
+        addr_len,
+        hostBuffer,
+        sizeof(hostBuffer),
+        serviceBuffer,
+        sizeof(serviceBuffer),
+        NI_NUMERICHOST
+    );
+    if (err != 0) {
+        printf("It's not working!!\n");
+    }
+    printf("\n\n\tServer listening on http://%s:%s\n", hostBuffer, serviceBuffer);
 }
 
 int main(void)
@@ -179,21 +196,3 @@ int main(void)
     return 0;
 }
 
-void report(struct sockaddr_in *serverAddress){
-    char hostBuffer[INET6_ADDRSTRLEN];
-    char serviceBuffer[NI_MAXSERV]; // defined in `<netdb.h>`
-    socklen_t addr_len = sizeof(*serverAddress);
-    int err = getnameinfo(
-        (struct sockaddr *) serverAddress,
-        addr_len,
-        hostBuffer,
-        sizeof(hostBuffer),
-        serviceBuffer,
-        sizeof(serviceBuffer),
-        NI_NUMERICHOST
-    );
-    if (err != 0) {
-        printf("It's not working!!\n");
-    }
-    printf("\n\n\tServer listening on http://%s:%s\n", hostBuffer, serviceBuffer);
-}
