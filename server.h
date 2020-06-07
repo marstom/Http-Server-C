@@ -15,11 +15,10 @@ const char *CONTENT_JPEG = "image/jpeg";
 
 
 
-void setHttpHeader(char **httpContent);
 
 void setBasicHeaders(char **httpContent, const char *contentType);
 
-void manageFile(char **httpContent);
+
 
 /*
 Content - will be send to client (Browser / Postman)

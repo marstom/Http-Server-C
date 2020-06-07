@@ -14,24 +14,12 @@
 #include <arpa/inet.h>
 
 
-void setHttpHeader(char **httpContent){
-    char *content = *httpContent;
-    // File object to return
-    //FILE *htmlData = fopen("index.html", "r");
-    FILE *htmlData = fopen("blank.json", "r");
-
-    char line[100];
-    while (fgets(line, 100, htmlData) != 0) {
-        strcat(content, line);
-    }
-    (*httpContent) = content;
-}
-
 void setBasicHeaders(char **httpContent, const char *contentType){
     char *content = *httpContent;
     // http verion and status
     char httpHeader[80] = "HTTP/1.1 200 OK\r\n";
     strcat(content, httpHeader);
+    
     // cookies
     char cookie[120] = "Set-Cookie: CIASTKO=Mojeciastko;\r\n";
     strcat(content, cookie);
@@ -43,27 +31,11 @@ void setBasicHeaders(char **httpContent, const char *contentType){
     strcat(contentHeader, "\r\n");
     strcat(content, contentHeader);
 
-    // file lenght
-    // strcat(content, "Content-Length: 450\r\n");
-    
-    
     char endOfHeaders[80] = "\r\n";
     strcat(content, endOfHeaders);
     (*httpContent) = content;   
 }
 
-void manageFile(char **httpContent){
-    char *content = *httpContent;
-    char httpHeader[80] = "HTTP/1.1 200 OK\n";
-    strcat(content, httpHeader);
-    // char contentHeader[80] = "Content-type: text/html\n";
-    char contentHeader[80] = "Content-type: application/json\n";
-    strcat(content, contentHeader);
-    char endOfHeaders[80] = "\n";
-    strcat(content, endOfHeaders);
-    setHttpHeader(httpContent);  // Custom function to set header
-    (*httpContent) = content;
-}
 
 size_t loopbackResponse(char **httpContent, char *request){
     char *response = *httpContent;
@@ -84,12 +56,11 @@ size_t loopbackResponse(char **httpContent, char *request){
     strcat(filename, ".");
     strcat(filename, splittedLine[1]);
     puts(filename);
-    puts(splittedLine[1]);
-
     puts("-----------------\n");
 
-    setBasicHeaders(&response, CONTENT_PNG);
 
+    // Image handler
+    setBasicHeaders(&response, CONTENT_PNG);
     FILE *data = fopen(filename, "rb");
     fseek(data, 0, SEEK_END);
     size_t fsize = ftell(data);
@@ -97,19 +68,18 @@ size_t loopbackResponse(char **httpContent, char *request){
     char *buffer = malloc(fsize+1);
     size_t bytesRead = fread(buffer, 1, fsize, data);
     size_t responseLen = strlen(response);
-
     fclose(data);
     for (size_t i = 0; i < bytesRead; i++){
         response[responseLen + i] = buffer[i];
     }
     buffer[fsize] = 0;
     size_t payloadLen = fsize;
+    // end of image handler
 
     size_t contentLength = responseLen + payloadLen;
     (*httpContent) = response;
     return contentLength;
 }
-
 
 
 void parseClientRequest(char *request){
@@ -122,7 +92,6 @@ void prepareClientResponse(char **response){
     // strcat(content, "<h1>To ja</h1>");
     (*response) = content;
 }
-
 
 void cleanFileContent(char **httpContent){
     *httpContent[0] = '\0';
@@ -203,7 +172,6 @@ int main(void)
     // -----------------------------------------------------------------------------------------------------------------
     while(1) {
         clientSocket = accept(serverSocket, NULL, NULL);
-        //manageFile(&httpContent);
         char buff[8000];
         if(recv(clientSocket, buff, 5000, 0) < 0){
             puts("non response\n");
