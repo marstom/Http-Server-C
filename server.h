@@ -19,11 +19,10 @@ const char *CONTENT_JPEG = "image/jpeg";
 bool isBinary(char *filename);
 
 /*
-Content - will be send to client (Browser / Postman)
-Buff - data received from server
+Process request and response
 :return content length, must know how many bytes send
 */
-size_t loopbackResponse(char **httpContent, char *buff);
+size_t processRequestResponse(char **httpContent, char *buff);
 
 /*
 Now it's really basic, max request lines nuber are 500

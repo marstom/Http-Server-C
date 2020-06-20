@@ -8,7 +8,7 @@
 #include <assert.h>
 #include <stdbool.h>
 #include <signal.h>
-
+#include <string.h>
 // Usual socket headers
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -71,10 +71,13 @@ bool isBinary(char *filename){
     exit(1);
 }
 
-size_t loopbackResponse(char **httpContent, char *request){
+
+size_t processRequestResponse(char **httpContent, char *request){
     char *response = *httpContent;
+
     // parseClientRequest(request);
     // prepareClientResponse(&response);
+
     puts("request from client\n-----------\n");
     size_t contentLength = 0;
     HeaderContent *headerContent;
@@ -83,22 +86,24 @@ size_t loopbackResponse(char **httpContent, char *request){
 
     char **splittedLine = malloc(sizeof(char*) * 500);
     // todo create function for tear down Header whole content
-    getSplittedLine(headerContent, splittedLine, 0);
+    size_t allocatedLines = getSplittedLine(headerContent, splittedLine, 0);
+
     for (size_t i = 0; i < nuberOfLines; i++){
         free(headerContent->lines[i]);
     }
     free(headerContent->lines);
     free(headerContent);
-    
 
     char* filename = calloc(100, sizeof(char));
     strcat(filename, ".");
     strcat(filename, splittedLine[1]);
-    for (size_t i = 0; i < 500; i++){
+
+    // Create tear-down allocated function
+    for (size_t i = 0; i < allocatedLines; i++){
         free(splittedLine[i]);
     }
-    
     free(splittedLine);
+    
     puts(filename);
 
     puts("-----------------\n");
@@ -116,6 +121,7 @@ size_t loopbackResponse(char **httpContent, char *request){
             size_t bytesRead = fread(buffer, 1, fsize, data);
             size_t responseLen = strlen(response);
             fclose(data);
+            response = realloc(response, bytesRead+1024);
             for (size_t i = 0; i < bytesRead; i++){
                 response[responseLen + i] = buffer[i];
             }
@@ -141,9 +147,6 @@ size_t loopbackResponse(char **httpContent, char *request){
         contentLength = strlen(response);
     }
     free(filename);
-
-
-
     (*httpContent) = response;
     return contentLength;
 }
@@ -246,7 +249,7 @@ int main(void)
             puts("non response\n");
             contentLength = 0;
         }else{
-            contentLength = loopbackResponse(&httpContent, buff);
+            contentLength = processRequestResponse(&httpContent, buff);
         }
         send(clientSocket, httpContent, contentLength, 0);
         memset(buff, '\0', 8000);

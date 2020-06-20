@@ -66,7 +66,7 @@ void __fill_content(char *str, HeaderContent **hc){
     (*hc) = h;
 }
 
-void getSplittedLine(HeaderContent *hc, char **array, int lineNumber){
+size_t getSplittedLine(HeaderContent *hc, char **array, int lineNumber){
     char *line = hc->lines[lineNumber];
     char *temp = calloc(strlen(line)+1, sizeof(char));
     strcpy(temp, line);
@@ -80,4 +80,5 @@ void getSplittedLine(HeaderContent *hc, char **array, int lineNumber){
         lineNo++;
     }
     free(temp);
+    return lineNo;
 }
