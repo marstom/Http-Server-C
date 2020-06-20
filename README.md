@@ -6,11 +6,12 @@ I am not professional C developer, if there are bad practices in code feel free 
 
 This is my own http-server, I writing this to gain knowledge how http servers are working :smile:.
 Features:
-* Can serve images up to 8000 bytes.
 * Can serve CSS, HTML, JS files.
 * Serve static page.
-
+* Dynamic memory allocation.
 
 ## TODO
-* Add dynamic memory allocation, now when image is bigger than 8000 bytes server will crash.
-* Free allocated memory. Valgrind should show 0 lost bytes.
+- [x] Add dynamic memory allocation, now when image is bigger than 8000 bytes server will crash.
+- [x] Free allocated memory. Valgrind should show 0 lost bytes. Now there is dynamic memory allocation.
+- [ ] Handle exceptions, no such resource 404, error 500 etc.
+
