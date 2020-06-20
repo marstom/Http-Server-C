@@ -15,8 +15,10 @@ const char *CONTENT_CSS = "text/css";
 const char *CONTENT_PNG = "image/png";
 const char *CONTENT_JPEG = "image/jpeg";
 
-
-bool isBinary(char *filename);
+/*Checking if file is binary type or not
+:return true- binary false-text file
+*/
+bool isFileBinary(char *filename);
 
 /*
 Process request and response
@@ -24,14 +26,10 @@ Process request and response
 */
 size_t processRequestResponse(char **httpContent, char *buff);
 
-/*
-Now it's really basic, max request lines nuber are 500
-*/
+/*Parsing request use in future*/
 void parseClientRequest(char *request);
-
+/*Parsing response use in future*/
 void prepareClientResponse(char **response);
 
-/* 
-Working for text content only, not binary 
-*/
+/*Working for text content only, not binary*/
 void cleanFileContent(char **httpContent);

@@ -45,7 +45,7 @@ void setBasicHeaders(char **httpContent, const char *contentType){
 }
 
 
-bool isBinary(char *filename){
+bool isFileBinary(char *filename){
     char *binary = strdup(".png;.jpeg;.ico");
     char *text = strdup(".html;.css;.json;.js");
     char *tok;
@@ -109,7 +109,7 @@ size_t processRequestResponse(char **httpContent, char *request){
     puts("-----------------\n");
 
     //binary types
-    if(isBinary(filename) == true){
+    if(isFileBinary(filename) == true){
         if(strstr(filename, "png") != NULL || strstr(filename, "ico") != NULL){
             // Image handler
             setBasicHeaders(&response, CONTENT_PNG);
@@ -153,7 +153,6 @@ size_t processRequestResponse(char **httpContent, char *request){
 
 
 void parseClientRequest(char *request){
-
 }
 
 void prepareClientResponse(char **response){
