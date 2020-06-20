@@ -7,6 +7,7 @@
 #include <signal.h>
 #include <assert.h>
 #include <stdbool.h>
+#include <signal.h>
 
 // Usual socket headers
 #include <sys/types.h>
@@ -15,6 +16,11 @@
 
 #include <arpa/inet.h>
 
+volatile sig_atomic_t done = 0;
+
+void term(int signum){
+    done = 1;
+}
 
 void setBasicHeaders(char **httpContent, const char *contentType){
     char *content = *httpContent;
@@ -42,12 +48,9 @@ void setBasicHeaders(char **httpContent, const char *contentType){
 bool isBinary(char *filename){
     char *binary = strdup(".png;.jpeg;.ico");
     char *text = strdup(".html;.css;.json;.js");
-    char *delim = ";";
     char *tok;
-    // char *extText = strtok(text, delim);
     for(tok = strtok(binary, ";"); tok && *tok; tok = strtok(NULL, ";")){
         if(strstr(filename, tok) != NULL){
-            printf("bin: %s %s %s\n", filename, strstr(filename, tok), tok);
             free(binary);
             free(text);
             return true;
@@ -56,7 +59,6 @@ bool isBinary(char *filename){
     tok = NULL;
     for(tok = strtok(text, ";"); tok && *tok; tok = strtok(NULL, ";")){
         if(strstr(filename, tok) != NULL){
-            printf("text: %s %s %s\n", filename, strstr(filename, tok), tok);
             free(binary);
             free(text);
             return false;
@@ -71,24 +73,34 @@ bool isBinary(char *filename){
 
 size_t loopbackResponse(char **httpContent, char *request){
     char *response = *httpContent;
-    
     // parseClientRequest(request);
     // prepareClientResponse(&response);
-
-
     puts("request from client\n-----------\n");
-    // puts(request);
     size_t contentLength = 0;
     HeaderContent *headerContent;
     headerContent = malloc(sizeof(HeaderContent));
-    initHeaderContent(&headerContent, request);
+    size_t nuberOfLines = initHeaderContent(&headerContent, request);
 
     char **splittedLine = malloc(sizeof(char*) * 500);
+    // todo create function for tear down Header whole content
     getSplittedLine(headerContent, splittedLine, 0);
+    for (size_t i = 0; i < nuberOfLines; i++){
+        free(headerContent->lines[i]);
+    }
+    free(headerContent->lines);
+    free(headerContent);
+    
+
     char* filename = calloc(100, sizeof(char));
     strcat(filename, ".");
     strcat(filename, splittedLine[1]);
+    for (size_t i = 0; i < 500; i++){
+        free(splittedLine[i]);
+    }
+    
+    free(splittedLine);
     puts(filename);
+
     puts("-----------------\n");
 
     //binary types
@@ -108,6 +120,7 @@ size_t loopbackResponse(char **httpContent, char *request){
                 response[responseLen + i] = buffer[i];
             }
             buffer[fsize] = 0;
+            free(buffer);
             size_t payloadLen = fsize;
             contentLength = responseLen + payloadLen;
         }
@@ -127,6 +140,7 @@ size_t loopbackResponse(char **httpContent, char *request){
         fclose(data);
         contentLength = strlen(response);
     }
+    free(filename);
 
 
 
@@ -174,6 +188,8 @@ void report(struct sockaddr_in *serverAddress){
 
 int main(void)
 {
+    signal(SIGINT ,term);
+
     char *httpContent = calloc(8000, sizeof(char));
     size_t contentLength = 0;
     // Socket setup: creates an endpoint for communication, returns a descriptor
@@ -223,7 +239,7 @@ int main(void)
 
     // Wait for a connection, create a connected socket if a connection is pending
     // -----------------------------------------------------------------------------------------------------------------
-    while(1) {
+    while(!done) {
         clientSocket = accept(serverSocket, NULL, NULL);
         char buff[8000];
         if(recv(clientSocket, buff, 5000, 0) < 0){
