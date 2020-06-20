@@ -26,6 +26,7 @@ size_t __allocLines(char *str, HeaderContent **hc){
         content = strtok(NULL, separator);
     }
     h->lines = calloc((numberOfLines+11), sizeof(char*));
+    free(temp);
     (*hc) = h;
     return numberOfLines;
 }
@@ -44,6 +45,7 @@ void __allocSentences(char *str, HeaderContent **hc){
         lineNumber++;
         content = strtok(NULL, separator);
     }
+    free(temp);
     (*hc) = h;
 
 }
@@ -60,10 +62,11 @@ void __fill_content(char *str, HeaderContent **hc){
         lineNumber++;
         content = strtok(NULL, separator);
     }
+    free(temp);
     (*hc) = h;
 }
 
-void getSplittedLine(HeaderContent *hc, char **array, int lineNumber){
+size_t getSplittedLine(HeaderContent *hc, char **array, int lineNumber){
     char *line = hc->lines[lineNumber];
     char *temp = calloc(strlen(line)+1, sizeof(char));
     strcpy(temp, line);
@@ -76,4 +79,6 @@ void getSplittedLine(HeaderContent *hc, char **array, int lineNumber){
         content = strtok(NULL, separator);
         lineNo++;
     }
+    free(temp);
+    return lineNo;
 }

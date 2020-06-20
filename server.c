@@ -5,7 +5,10 @@
 #include <unistd.h>
 #include <netdb.h> // for getnameinfo()
 #include <signal.h>
-
+#include <assert.h>
+#include <stdbool.h>
+#include <signal.h>
+#include <string.h>
 // Usual socket headers
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -13,6 +16,11 @@
 
 #include <arpa/inet.h>
 
+volatile sig_atomic_t done = 0;
+
+void term(int signum){
+    done = 1;
+}
 
 void setBasicHeaders(char **httpContent, const char *contentType){
     char *content = *httpContent;
@@ -37,66 +45,99 @@ void setBasicHeaders(char **httpContent, const char *contentType){
 }
 
 
-size_t loopbackResponse(char **httpContent, char *request){
+bool isFileBinary(char *filename){
+    char *binary = strdup(".png;.jpeg;.ico");
+    char *text = strdup(".html;.css;.json;.js");
+    char *tok;
+    for(tok = strtok(binary, ";"); tok && *tok; tok = strtok(NULL, ";")){
+        if(strstr(filename, tok) != NULL){
+            free(binary);
+            free(text);
+            return true;
+        }
+    }
+    tok = NULL;
+    for(tok = strtok(text, ";"); tok && *tok; tok = strtok(NULL, ";")){
+        if(strstr(filename, tok) != NULL){
+            free(binary);
+            free(text);
+            return false;
+        }
+    }
+
+    free(binary);
+    free(text);
+    printf("Unknow file extension: %s!\n", filename);
+    exit(1);
+}
+
+
+size_t processRequestResponse(char **httpContent, char *request){
     char *response = *httpContent;
-    
+
     // parseClientRequest(request);
     // prepareClientResponse(&response);
 
-
     puts("request from client\n-----------\n");
-    // puts(request);
     size_t contentLength = 0;
     HeaderContent *headerContent;
     headerContent = malloc(sizeof(HeaderContent));
-    initHeaderContent(&headerContent, request);
+    size_t nuberOfLines = initHeaderContent(&headerContent, request);
 
     char **splittedLine = malloc(sizeof(char*) * 500);
-    getSplittedLine(headerContent, splittedLine, 0);
+    // todo create function for tear down Header whole content
+    size_t allocatedLines = getSplittedLine(headerContent, splittedLine, 0);
+
+    for (size_t i = 0; i < nuberOfLines; i++){
+        free(headerContent->lines[i]);
+    }
+    free(headerContent->lines);
+    free(headerContent);
+
     char* filename = calloc(100, sizeof(char));
     strcat(filename, ".");
     strcat(filename, splittedLine[1]);
+
+    // Create tear-down allocated function
+    for (size_t i = 0; i < allocatedLines; i++){
+        free(splittedLine[i]);
+    }
+    free(splittedLine);
+    
     puts(filename);
+
     puts("-----------------\n");
 
-    if(strstr(filename, "png") != NULL){
-        // Image handler
-        setBasicHeaders(&response, CONTENT_PNG);
-        FILE *data = fopen(filename, "rb");
-        fseek(data, 0, SEEK_END);
-        size_t fsize = ftell(data);
-        fseek(data, 0, SEEK_SET);
-        char *buffer = malloc(fsize+1);
-        size_t bytesRead = fread(buffer, 1, fsize, data);
-        size_t responseLen = strlen(response);
-        fclose(data);
-        for (size_t i = 0; i < bytesRead; i++){
-            response[responseLen + i] = buffer[i];
+    //binary types
+    if(isFileBinary(filename) == true){
+        if(strstr(filename, "png") != NULL || strstr(filename, "ico") != NULL){
+            // Image handler
+            setBasicHeaders(&response, CONTENT_PNG);
+            FILE *data = fopen(filename, "rb");
+            fseek(data, 0, SEEK_END);
+            size_t fsize = ftell(data);
+            fseek(data, 0, SEEK_SET);
+            char *buffer = malloc(fsize+1);
+            size_t bytesRead = fread(buffer, 1, fsize, data);
+            size_t responseLen = strlen(response);
+            fclose(data);
+            response = realloc(response, bytesRead+1024);
+            for (size_t i = 0; i < bytesRead; i++){
+                response[responseLen + i] = buffer[i];
+            }
+            buffer[fsize] = 0;
+            free(buffer);
+            size_t payloadLen = fsize;
+            contentLength = responseLen + payloadLen;
         }
-        buffer[fsize] = 0;
-        size_t payloadLen = fsize;
-        // end of image handler
-        contentLength = responseLen + payloadLen;
-    }else if(strstr(filename, "html") != NULL){
-        setBasicHeaders(&response, CONTENT_HTML);
-        FILE *data = fopen(filename, "r");
-        char line[100];
-        while (fgets(line, 100, data) != 0) {
-            strcat(response, line);
+    } else { 
+        if(strstr(filename, "html") != NULL){
+            setBasicHeaders(&response, CONTENT_HTML);
+        } else if(strstr(filename, "css") != NULL){
+            setBasicHeaders(&response, CONTENT_CSS);
+        } else if(strstr(filename, "js") != NULL){
+            setBasicHeaders(&response, CONTENT_JAVASCRIPT);
         }
-        fclose(data);
-        contentLength = strlen(response);
-    }else if(strstr(filename, "css") != NULL){
-        setBasicHeaders(&response, CONTENT_CSS);
-        FILE *data = fopen(filename, "r");
-        char line[100];
-        while (fgets(line, 100, data) != 0) {
-            strcat(response, line);
-        }
-        fclose(data);
-        contentLength = strlen(response);
-    }else if(strstr(filename, "js") != NULL){
-        setBasicHeaders(&response, CONTENT_JAVASCRIPT);
         FILE *data = fopen(filename, "r");
         char line[100];
         while (fgets(line, 100, data) != 0) {
@@ -105,16 +146,13 @@ size_t loopbackResponse(char **httpContent, char *request){
         fclose(data);
         contentLength = strlen(response);
     }
-
-
-
+    free(filename);
     (*httpContent) = response;
     return contentLength;
 }
 
 
 void parseClientRequest(char *request){
-
 }
 
 void prepareClientResponse(char **response){
@@ -152,6 +190,8 @@ void report(struct sockaddr_in *serverAddress){
 
 int main(void)
 {
+    signal(SIGINT ,term);
+
     char *httpContent = calloc(8000, sizeof(char));
     size_t contentLength = 0;
     // Socket setup: creates an endpoint for communication, returns a descriptor
@@ -201,14 +241,14 @@ int main(void)
 
     // Wait for a connection, create a connected socket if a connection is pending
     // -----------------------------------------------------------------------------------------------------------------
-    while(1) {
+    while(!done) {
         clientSocket = accept(serverSocket, NULL, NULL);
         char buff[8000];
         if(recv(clientSocket, buff, 5000, 0) < 0){
             puts("non response\n");
             contentLength = 0;
         }else{
-            contentLength = loopbackResponse(&httpContent, buff);
+            contentLength = processRequestResponse(&httpContent, buff);
         }
         send(clientSocket, httpContent, contentLength, 0);
         memset(buff, '\0', 8000);
