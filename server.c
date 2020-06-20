@@ -5,6 +5,8 @@
 #include <unistd.h>
 #include <netdb.h> // for getnameinfo()
 #include <signal.h>
+#include <assert.h>
+#include <stdbool.h>
 
 // Usual socket headers
 #include <sys/types.h>
@@ -37,6 +39,36 @@ void setBasicHeaders(char **httpContent, const char *contentType){
 }
 
 
+bool isBinary(char *filename){
+    char *binary = strdup(".png;.jpeg;.ico");
+    char *text = strdup(".html;.css;.json;.js");
+    char *delim = ";";
+    char *tok;
+    // char *extText = strtok(text, delim);
+    for(tok = strtok(binary, ";"); tok && *tok; tok = strtok(NULL, ";")){
+        if(strstr(filename, tok) != NULL){
+            printf("bin: %s %s %s\n", filename, strstr(filename, tok), tok);
+            free(binary);
+            free(text);
+            return true;
+        }
+    }
+    tok = NULL;
+    for(tok = strtok(text, ";"); tok && *tok; tok = strtok(NULL, ";")){
+        if(strstr(filename, tok) != NULL){
+            printf("text: %s %s %s\n", filename, strstr(filename, tok), tok);
+            free(binary);
+            free(text);
+            return false;
+        }
+    }
+
+    free(binary);
+    free(text);
+    printf("Unknow file extension: %s!\n", filename);
+    exit(1);
+}
+
 size_t loopbackResponse(char **httpContent, char *request){
     char *response = *httpContent;
     
@@ -59,44 +91,34 @@ size_t loopbackResponse(char **httpContent, char *request){
     puts(filename);
     puts("-----------------\n");
 
-    if(strstr(filename, "png") != NULL){
-        // Image handler
-        setBasicHeaders(&response, CONTENT_PNG);
-        FILE *data = fopen(filename, "rb");
-        fseek(data, 0, SEEK_END);
-        size_t fsize = ftell(data);
-        fseek(data, 0, SEEK_SET);
-        char *buffer = malloc(fsize+1);
-        size_t bytesRead = fread(buffer, 1, fsize, data);
-        size_t responseLen = strlen(response);
-        fclose(data);
-        for (size_t i = 0; i < bytesRead; i++){
-            response[responseLen + i] = buffer[i];
+    //binary types
+    if(isBinary(filename) == true){
+        if(strstr(filename, "png") != NULL || strstr(filename, "ico") != NULL){
+            // Image handler
+            setBasicHeaders(&response, CONTENT_PNG);
+            FILE *data = fopen(filename, "rb");
+            fseek(data, 0, SEEK_END);
+            size_t fsize = ftell(data);
+            fseek(data, 0, SEEK_SET);
+            char *buffer = malloc(fsize+1);
+            size_t bytesRead = fread(buffer, 1, fsize, data);
+            size_t responseLen = strlen(response);
+            fclose(data);
+            for (size_t i = 0; i < bytesRead; i++){
+                response[responseLen + i] = buffer[i];
+            }
+            buffer[fsize] = 0;
+            size_t payloadLen = fsize;
+            contentLength = responseLen + payloadLen;
         }
-        buffer[fsize] = 0;
-        size_t payloadLen = fsize;
-        // end of image handler
-        contentLength = responseLen + payloadLen;
-    }else if(strstr(filename, "html") != NULL){
-        setBasicHeaders(&response, CONTENT_HTML);
-        FILE *data = fopen(filename, "r");
-        char line[100];
-        while (fgets(line, 100, data) != 0) {
-            strcat(response, line);
+    } else { 
+        if(strstr(filename, "html") != NULL){
+            setBasicHeaders(&response, CONTENT_HTML);
+        } else if(strstr(filename, "css") != NULL){
+            setBasicHeaders(&response, CONTENT_CSS);
+        } else if(strstr(filename, "js") != NULL){
+            setBasicHeaders(&response, CONTENT_JAVASCRIPT);
         }
-        fclose(data);
-        contentLength = strlen(response);
-    }else if(strstr(filename, "css") != NULL){
-        setBasicHeaders(&response, CONTENT_CSS);
-        FILE *data = fopen(filename, "r");
-        char line[100];
-        while (fgets(line, 100, data) != 0) {
-            strcat(response, line);
-        }
-        fclose(data);
-        contentLength = strlen(response);
-    }else if(strstr(filename, "js") != NULL){
-        setBasicHeaders(&response, CONTENT_JAVASCRIPT);
         FILE *data = fopen(filename, "r");
         char line[100];
         while (fgets(line, 100, data) != 0) {

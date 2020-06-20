@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
+#include <stdbool.h>
 
 #define SIZE 1024
 #define BACKLOG 10  // Passed to listen()
@@ -16,11 +16,7 @@ const char *CONTENT_PNG = "image/png";
 const char *CONTENT_JPEG = "image/jpeg";
 
 
-
-
-void setBasicHeaders(char **httpContent, const char *contentType);
-
-
+bool isBinary(char *filename);
 
 /*
 Content - will be send to client (Browser / Postman)
