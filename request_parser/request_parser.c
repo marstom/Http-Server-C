@@ -14,6 +14,33 @@ size_t initHeaderContent(HeaderContent **hc, char *str){
     return numberOfLines;
 }
 
+size_t getSplittedLine(HeaderContent *hc, char **array, int lineNumber){
+    char *line = hc->lines[lineNumber];
+    char *temp = calloc(strlen(line)+1, sizeof(char));
+    strcpy(temp, line);
+    char *separator =" ";
+    char *content = strtok(temp, separator);
+    size_t lineNo = 0;
+    while(content != NULL){
+        array[lineNo] = calloc(strlen(content)+1, sizeof(char));
+        strcpy(array[lineNo], content);
+        content = strtok(NULL, separator);
+        lineNo++;
+    }
+    free(temp);
+    return lineNo;
+}
+
+
+void tearDownHeaderContent(HeaderContent **hc, size_t nuberOfLines){
+    HeaderContent *h = *hc;
+    for (size_t i = 0; i < nuberOfLines; i++){
+        free(h->lines[i]);
+    }
+    free(h->lines);
+    free(h);
+}
+
 size_t __allocLines(char *str, HeaderContent **hc){
     HeaderContent *h = *hc;
     char *temp = calloc(strlen(str)+1, sizeof(char));
@@ -66,19 +93,3 @@ void __fill_content(char *str, HeaderContent **hc){
     (*hc) = h;
 }
 
-size_t getSplittedLine(HeaderContent *hc, char **array, int lineNumber){
-    char *line = hc->lines[lineNumber];
-    char *temp = calloc(strlen(line)+1, sizeof(char));
-    strcpy(temp, line);
-    char *separator =" ";
-    char *content = strtok(temp, separator);
-    size_t lineNo = 0;
-    while(content != NULL){
-        array[lineNo] = calloc(strlen(content)+1, sizeof(char));
-        strcpy(array[lineNo], content);
-        content = strtok(NULL, separator);
-        lineNo++;
-    }
-    free(temp);
-    return lineNo;
-}

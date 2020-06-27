@@ -4,6 +4,22 @@
 #include <string.h>
 #include <stdbool.h>
 
+#include <errno.h>
+#include <unistd.h>
+#include <netdb.h> // for getnameinfo()
+#include <signal.h>
+#include <assert.h>
+#include <stdbool.h>
+#include <signal.h>
+#include <string.h>
+
+// Usual socket headers
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+
 #define SIZE 1024
 #define BACKLOG 10  // Passed to listen()
 

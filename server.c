@@ -1,18 +1,3 @@
-#include <errno.h>
-#include <unistd.h>
-#include <netdb.h> // for getnameinfo()
-#include <signal.h>
-#include <assert.h>
-#include <stdbool.h>
-#include <signal.h>
-#include <string.h>
-
-// Usual socket headers
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-
 #include "server.h"
 #include "request_parser/request_parser.h"
 #include "utils/file_checker.h"
@@ -48,27 +33,20 @@ void setBasicHeaders(char **httpContent, const char *contentType){
 
 size_t processRequestResponse(char **httpContent, char *request){
     char *response = *httpContent;
-
     // parseClientRequest(request);
     // prepareClientResponse(&response);
-
     puts("request from client\n-----------\n");
     size_t contentLength = 0;
     HeaderContent *headerContent;
     headerContent = malloc(sizeof(HeaderContent));
-    size_t nuberOfLines = initHeaderContent(&headerContent, request);
+    size_t numberOfLines = initHeaderContent(&headerContent, request);
     puts(request);
     putchar('\n');
 
     char **splittedLine = malloc(sizeof(char*) * 500);
     // todo create function for tear down Header whole content
     size_t allocatedLines = getSplittedLine(headerContent, splittedLine, 0);
-
-    for (size_t i = 0; i < nuberOfLines; i++){
-        free(headerContent->lines[i]);
-    }
-    free(headerContent->lines);
-    free(headerContent);
+    tearDownHeaderContent(&headerContent, numberOfLines);
 
     char* filename = calloc(100, sizeof(char));
     strcat(filename, ".");
