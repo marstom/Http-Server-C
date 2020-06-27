@@ -33,35 +33,28 @@ void setBasicHeaders(char **httpContent, const char *contentType){
 
 size_t processRequestResponse(char **httpContent, char *request){
     char *response = *httpContent;
-    // parseClientRequest(request);
-    // prepareClientResponse(&response);
+
     puts("request from client\n-----------\n");
     size_t contentLength = 0;
     HeaderContent *headerContent;
     headerContent = malloc(sizeof(HeaderContent));
-    size_t numberOfLines = initHeaderContent(&headerContent, request);
+    initHeaderContent(&headerContent, request);
     puts(request);
     putchar('\n');
 
-    char **splittedLine = malloc(sizeof(char*) * 20);
+    headerContent->requestSplittedLine = malloc(sizeof(char*) * 500);
     // todo create function for tear down Header whole content
-    size_t allocatedLines = getSplittedLine(headerContent, splittedLine, 0);
-    tearDownHeaderContent(&headerContent, numberOfLines);
+    getSplittedLine(headerContent, 0);
 
     char* filename = calloc(100, sizeof(char));
     strcat(filename, ".");
-    strcat(filename, splittedLine[1]);
+    strcat(filename, headerContent->requestSplittedLine[1]);
 
-    // Create tear-down allocated function
-    for (size_t i = 0; i < allocatedLines; i++){
-        free(splittedLine[i]);
-    }
-    free(splittedLine);
-    
+
     puts(filename);
-
     puts("-----------------\n");
 
+    tearDownHeaderContent(&headerContent);
     //binary types
     if(isFileBinary(filename) == true){
         if(strstr(filename, "png") != NULL || strstr(filename, "ico") != NULL){
