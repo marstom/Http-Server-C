@@ -43,7 +43,7 @@ size_t processRequestResponse(char **httpContent, char *request){
     puts(request);
     putchar('\n');
 
-    char **splittedLine = malloc(sizeof(char*) * 500);
+    char **splittedLine = malloc(sizeof(char*) * 20);
     // todo create function for tear down Header whole content
     size_t allocatedLines = getSplittedLine(headerContent, splittedLine, 0);
     tearDownHeaderContent(&headerContent, numberOfLines);

@@ -14,10 +14,10 @@ size_t initHeaderContent(HeaderContent **hc, char *str);
 
 
 /*
-Fill array with response body lines array
-[[Http1.1, POST, file/file.png],
-[Cookie, asdf, ....]
-:return number of alloacated lines
+Grab selected line from response and split it (spaces) like this
+["GET", "/www/index.html", "HTTP/1.1"]
+
+:return number of alloacated strings
 ]
 */
 size_t getSplittedLine(HeaderContent *hc, char **array, int lineNumber);
