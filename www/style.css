@@ -3,6 +3,12 @@ body{
     background-color: darkslategray;
 }
 
+a {
+    color: lime;
+    text-decoration: none;
+    text-transform: uppercase;
+  }
+
 .gold input[type=text]:focus {
     background-color: gold;
 }
