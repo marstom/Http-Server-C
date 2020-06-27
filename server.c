@@ -1,6 +1,3 @@
-#include "server.h"
-#include "request_parser/request_parser.h"
-
 #include <errno.h>
 #include <unistd.h>
 #include <netdb.h> // for getnameinfo()
@@ -14,8 +11,11 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-
 #include <arpa/inet.h>
+
+#include "server.h"
+#include "request_parser/request_parser.h"
+#include "utils/file_checker.h"
 
 volatile sig_atomic_t done = 0;
 
@@ -43,33 +43,6 @@ void setBasicHeaders(char **httpContent, const char *contentType){
     char endOfHeaders[80] = "\r\n";
     strcat(content, endOfHeaders);
     (*httpContent) = content;   
-}
-
-
-bool isFileBinary(char *filename){
-    char *binary = strdup(".png;.jpeg;.ico");
-    char *text = strdup(".html;.css;.json;.js");
-    char *tok;
-    for(tok = strtok(binary, ";"); tok && *tok; tok = strtok(NULL, ";")){
-        if(strstr(filename, tok) != NULL){
-            free(binary);
-            free(text);
-            return true;
-        }
-    }
-    tok = NULL;
-    for(tok = strtok(text, ";"); tok && *tok; tok = strtok(NULL, ";")){
-        if(strstr(filename, tok) != NULL){
-            free(binary);
-            free(text);
-            return false;
-        }
-    }
-
-    free(binary);
-    free(text);
-    printf("Unknow file extension: %s!\n", filename);
-    exit(1);
 }
 
 
