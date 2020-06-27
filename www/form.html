@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Form</title>
+    <link rel="shortcut icon" href="favicon.ico">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h2>To jest zwykły formularz:</h2>
+
+    <form method="POST">
+        <label for="name">Imie: </label>
+        <input type="text" name="name" value="Tomasz">
+        <label for="phone">Telefon: </label>
+        <input type="text" name="phone" value="11666777999">
+        <input type="submit" id="send">
+    </form>
+    
+    <h2>To jest formularz javascript:</h2>
+    <form method="POST" class="gold">
+        <label for="name">Imie: </label>
+        <input type="text" name="name" id="iName" value="Tomasz">
+        <label for="phone">Telefon: </label>
+        <input type="text" name="phone"  id="iPhone" value="11666777999">
+        <input type="submit" id="sendButton">
+    </form>
+
+    <script src="form.js"></script>
+</body>
+</html>

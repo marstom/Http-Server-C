@@ -1,5 +1,5 @@
 #include "server.h"
-#include "utils/split_string.h"
+#include "request_parser/request_parser.h"
 
 #include <errno.h>
 #include <unistd.h>
@@ -9,6 +9,7 @@
 #include <stdbool.h>
 #include <signal.h>
 #include <string.h>
+
 // Usual socket headers
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -83,6 +84,8 @@ size_t processRequestResponse(char **httpContent, char *request){
     HeaderContent *headerContent;
     headerContent = malloc(sizeof(HeaderContent));
     size_t nuberOfLines = initHeaderContent(&headerContent, request);
+    puts(request);
+    putchar('\n');
 
     char **splittedLine = malloc(sizeof(char*) * 500);
     // todo create function for tear down Header whole content

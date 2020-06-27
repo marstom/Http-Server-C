@@ -1,7 +1,7 @@
 CFLAGS=-g -Wall -Wextra
 OUT=marstom_server
 LIBS=
-SOURCES=server.c ./utils/split_string.c
+SOURCES=server.c ./request_parser/request_parser.c
 
 CC=gcc
 

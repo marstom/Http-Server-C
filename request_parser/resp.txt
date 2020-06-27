@@ -1,9 +1,9 @@
-GET /obrazek.png HTTP/1.1
+GET /www/obrazek.png HTTP/1.1
 naglowek: wartosc
 Content-Type: application/javascript
 User-Agent: PostmanRuntime/7.25.0
 Accept: */*
-Postman-Token: 37ffa6eb-4823-4ce4-9c85-fba9f410de2e
+Postman-Token: 7fbfc303-f759-453c-ab8f-19551231e0cc
 Host: 127.0.0.1:8001
 Accept-Encoding: gzip, deflate, br
 Connection: keep-alive
