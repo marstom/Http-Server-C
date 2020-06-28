@@ -34,7 +34,7 @@ void setBasicHeaders(char **httpContent, const char *contentType){
 size_t processRequestResponse(char **httpContent, char *request){
     char *response = *httpContent;
 
-    puts("request from client\n-----------\n");
+    puts("process request from client\n-----------\n");
     size_t contentLength = 0;
     HeaderContent *headerContent;
     headerContent = malloc(sizeof(HeaderContent));
@@ -54,6 +54,7 @@ size_t processRequestResponse(char **httpContent, char *request){
     puts(filename);
     puts("-----------------\n");
 
+    //prepare response for client
     tearDownHeaderContent(&headerContent);
     //binary types
     if(isFileBinary(filename) == true){
@@ -61,6 +62,10 @@ size_t processRequestResponse(char **httpContent, char *request){
             // Image handler
             setBasicHeaders(&response, CONTENT_PNG);
             FILE *data = fopen(filename, "rb");
+            if(data == NULL){
+                printf("File open status: %d\n", errno);
+                return 0;
+            }
             fseek(data, 0, SEEK_END);
             size_t fsize = ftell(data);
             fseek(data, 0, SEEK_SET);
@@ -86,6 +91,10 @@ size_t processRequestResponse(char **httpContent, char *request){
             setBasicHeaders(&response, CONTENT_JAVASCRIPT);
         }
         FILE *data = fopen(filename, "r");
+        if(data == NULL){
+            printf("File open status: %d\n", errno);
+            return 0;
+        }
         char line[100];
         while (fgets(line, 100, data) != 0) {
             strcat(response, line);

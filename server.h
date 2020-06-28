@@ -12,6 +12,7 @@
 #include <stdbool.h>
 #include <signal.h>
 #include <string.h>
+#include <errno.h>
 
 // Usual socket headers
 #include <sys/types.h>
