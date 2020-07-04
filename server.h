@@ -4,7 +4,24 @@
 #include <string.h>
 #include <stdbool.h>
 
-#define SIZE 1024
+#include <errno.h>
+#include <unistd.h>
+#include <netdb.h> // for getnameinfo()
+#include <signal.h>
+#include <assert.h>
+#include <stdbool.h>
+#include <signal.h>
+#include <string.h>
+#include <errno.h>
+
+// Usual socket headers
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+
+#define REQUEST_BUFFER_SIZE 12000
 #define BACKLOG 10  // Passed to listen()
 
 

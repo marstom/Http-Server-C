@@ -1,17 +1,47 @@
-#include "split_string.h"
+#include "request_parser.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 
-size_t initHeaderContent(HeaderContent **hc, char *str){
+void initHeaderContent(HeaderContent **hc, char *str){
     HeaderContent *h = *hc;
-    size_t numberOfLines = __allocLines(str, &h);
+    h->numberOfRequestLines = __allocLines(str, &h);
     __allocSentences(str, &h);
     __fill_content(str, &h);
     (*hc) = h;
-    return numberOfLines;
+}
+
+void getSplittedLine(HeaderContent *hc, int lineNumber){
+    char *line = hc->lines[lineNumber];
+    char *temp = calloc(strlen(line)+1, sizeof(char));
+    strcpy(temp, line);
+    char *separator =" ";
+    char *content = strtok(temp, separator);
+    hc->numberOfRequestSplittedLines = 0;
+    while(content != NULL){
+        hc->requestSplittedLine[hc->numberOfRequestSplittedLines] = calloc(strlen(content)+1, sizeof(char));
+        strcpy(hc->requestSplittedLine[hc->numberOfRequestSplittedLines], content);
+        content = strtok(NULL, separator);
+        hc->numberOfRequestSplittedLines++;
+    }
+    free(temp);
+}
+
+
+void tearDownHeaderContent(HeaderContent **hc){
+    HeaderContent *h = *hc;
+    for (size_t i = 0; i < h->numberOfRequestLines; i++){
+        free(h->lines[i]);
+    }
+    free(h->lines);
+
+    for (size_t i = 0; i < h->numberOfRequestSplittedLines; i++){
+        free(h->requestSplittedLine[i]);
+    }
+    free(h->requestSplittedLine);
+    free(h);
 }
 
 size_t __allocLines(char *str, HeaderContent **hc){
@@ -66,19 +96,3 @@ void __fill_content(char *str, HeaderContent **hc){
     (*hc) = h;
 }
 
-size_t getSplittedLine(HeaderContent *hc, char **array, int lineNumber){
-    char *line = hc->lines[lineNumber];
-    char *temp = calloc(strlen(line)+1, sizeof(char));
-    strcpy(temp, line);
-    char *separator =" ";
-    char *content = strtok(temp, separator);
-    size_t lineNo = 0;
-    while(content != NULL){
-        array[lineNo] = calloc(strlen(content)+1, sizeof(char));
-        strcpy(array[lineNo], content);
-        content = strtok(NULL, separator);
-        lineNo++;
-    }
-    free(temp);
-    return lineNo;
-}
