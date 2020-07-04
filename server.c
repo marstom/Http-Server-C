@@ -148,6 +148,7 @@ int main(void)
 {
     signal(SIGINT ,term);
 
+    // this is initial size, content is realloc later
     char *httpContent = calloc(8000, sizeof(char));
     size_t contentLength = 0;
     // Socket setup: creates an endpoint for communication, returns a descriptor
