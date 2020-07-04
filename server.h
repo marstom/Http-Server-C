@@ -21,7 +21,7 @@
 #include <arpa/inet.h>
 
 
-#define SIZE 1024
+#define REQUEST_BUFFER_SIZE 12000
 #define BACKLOG 10  // Passed to listen()
 
 

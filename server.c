@@ -31,15 +31,15 @@ void setBasicHeaders(char **httpContent, const char *contentType){
 }
 
 
-size_t processRequestResponse(char **httpContent, char *request){
+size_t processRequestResponse(char **httpContent, char *rawRequestData){
     char *response = *httpContent;
 
     puts("process request from client\n-----------\n");
     size_t contentLength = 0;
     HeaderContent *headerContent;
     headerContent = malloc(sizeof(HeaderContent));
-    initHeaderContent(&headerContent, request);
-    puts(request);
+    initHeaderContent(&headerContent, rawRequestData);
+    puts(rawRequestData);
     putchar('\n');
 
     headerContent->requestSplittedLine = malloc(sizeof(char*) * 500);
@@ -200,21 +200,21 @@ int main(void)
     // -----------------------------------------------------------------------------------------------------------------
     while(!done) {
         clientSocket = accept(serverSocket, NULL, NULL);
-        char buff[8000];
-        if(recv(clientSocket, buff, 5000, 0) < 0){
+        char requestData[REQUEST_BUFFER_SIZE];
+        if(recv(clientSocket, requestData, REQUEST_BUFFER_SIZE, 0) < 0){
             puts("non response\n");
             contentLength = 0;
         }else{
-            contentLength = processRequestResponse(&httpContent, buff);
+            contentLength = processRequestResponse(&httpContent, requestData);
         }
         send(clientSocket, httpContent, contentLength, 0);
-        memset(buff, '\0', 8000);
+        memset(requestData, '\0', REQUEST_BUFFER_SIZE);
         cleanFileContent(&httpContent);
         close(clientSocket);
     }
     free(httpContent);
     close(serverSocket);
-    puts("memory fried\n");
+    puts("memory freed!\n");
     return 0;
 }
 
