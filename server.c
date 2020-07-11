@@ -32,10 +32,18 @@ void setBasicHeaders(char **httpContent, const char *contentType){
 
 
 size_t processRequestResponse(char **httpContent, char *rawRequestData){
-    char *response = *httpContent;
+    RequestData *requestData = malloc(sizeof(RequestData));
+    parseClientRequest(rawRequestData, requestData);
+    size_t contentLength = prepareClientResponse(httpContent, requestData);
+    free(requestData);
+    //free(requestData->filename);
+    return contentLength;
 
+}
+
+
+void parseClientRequest(char *rawRequestData, RequestData *requestData){
     puts("process request from client\n-----------\n");
-    size_t contentLength = 0;
     HeaderContent *headerContent;
     headerContent = malloc(sizeof(HeaderContent));
     initHeaderContent(&headerContent, rawRequestData);
@@ -46,22 +54,24 @@ size_t processRequestResponse(char **httpContent, char *rawRequestData){
     // todo create function for tear down Header whole content
     getSplittedLine(headerContent, 0);
 
-    char* filename = calloc(100, sizeof(char));
-    strcat(filename, ".");
-    strcat(filename, headerContent->requestSplittedLine[1]);
-
-
-    puts(filename);
-    puts("-----------------\n");
+    // obtain filename
+    requestData->filename = calloc(100, sizeof(char));
+    strcat(requestData->filename, ".");
+    strcat(requestData->filename, headerContent->requestSplittedLine[1]);
+    puts(requestData->filename);
 
     //prepare response for client
     tearDownHeaderContent(&headerContent);
-    //binary types
-    if(isFileBinary(filename) == true){
-        if(strstr(filename, "png") != NULL || strstr(filename, "ico") != NULL){
+}
+
+size_t prepareClientResponse(char **httpContent, RequestData *requestData){
+    char *response = *httpContent;
+    size_t contentLength = 0;
+    if(isFileBinary(requestData->filename) == true){
+        if(strstr(requestData->filename, "png") != NULL || strstr(requestData->filename, "ico") != NULL){
             // Image handler
             setBasicHeaders(&response, CONTENT_PNG);
-            FILE *data = fopen(filename, "rb");
+            FILE *data = fopen(requestData->filename, "rb");
             if(data == NULL){
                 printf("File open status: %d\n", errno);
                 return 0;
@@ -83,14 +93,14 @@ size_t processRequestResponse(char **httpContent, char *rawRequestData){
             contentLength = responseLen + payloadLen;
         }
     } else { 
-        if(strstr(filename, "html") != NULL){
+        if(strstr(requestData->filename, "html") != NULL){
             setBasicHeaders(&response, CONTENT_HTML);
-        } else if(strstr(filename, "css") != NULL){
+        } else if(strstr(requestData->filename, "css") != NULL){
             setBasicHeaders(&response, CONTENT_CSS);
-        } else if(strstr(filename, "js") != NULL){
+        } else if(strstr(requestData->filename, "js") != NULL){
             setBasicHeaders(&response, CONTENT_JAVASCRIPT);
         }
-        FILE *data = fopen(filename, "r");
+        FILE *data = fopen(requestData->filename, "r");
         if(data == NULL){
             printf("File open status: %d\n", errno);
             return 0;
@@ -102,20 +112,10 @@ size_t processRequestResponse(char **httpContent, char *rawRequestData){
         fclose(data);
         contentLength = strlen(response);
     }
-    free(filename);
+    free(requestData->filename);
     (*httpContent) = response;
+    //(*response) = content;
     return contentLength;
-}
-
-
-void parseClientRequest(char *request){
-}
-
-void prepareClientResponse(char **response){
-    char *content = *response;
-    // setBasicHeaders(&content, CONTENT_HTML);
-    // strcat(content, "<h1>To ja</h1>");
-    (*response) = content;
 }
 
 void cleanFileContent(char **httpContent){
