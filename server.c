@@ -1,6 +1,7 @@
 #include "server.h"
 #include "request_parser/request_parser.h"
 #include "utils/file_checker.h"
+#include "utils/log.h"
 
 volatile sig_atomic_t done = 0;
 
@@ -43,12 +44,11 @@ size_t processRequestResponse(char **httpContent, char *rawRequestData){
 
 
 void parseClientRequest(char *rawRequestData, RequestData *requestData){
-    puts("process request from client\n-----------\n");
     HeaderContent *headerContent;
     headerContent = malloc(sizeof(HeaderContent));
     initHeaderContent(&headerContent, rawRequestData);
-    puts(rawRequestData);
-    putchar('\n');
+    log("process request from client\n-----------\n", rawRequestData, NULL);
+    log("process request from client\n-----------\n", rawRequestData, NULL);
 
     headerContent->requestSplittedLine = malloc(sizeof(char*) * 500);
     // todo create function for tear down Header whole content
@@ -127,7 +127,7 @@ Cannot be in h file, don't know why
 */
 void report(struct sockaddr_in *serverAddress){
     char hostBuffer[INET6_ADDRSTRLEN];
-    char serviceBuffer[NI_MAXSERV]; // defined in `<netdb.h>`
+    char serviceBuffer[32]; // defined in `<netdb.h>`
     socklen_t addr_len = sizeof(*serverAddress);
     int err = getnameinfo(
         (struct sockaddr *) serverAddress,
@@ -136,7 +136,7 @@ void report(struct sockaddr_in *serverAddress){
         sizeof(hostBuffer),
         serviceBuffer,
         sizeof(serviceBuffer),
-        NI_NUMERICHOST
+        1
     );
     if (err != 0) {
         printf("It's not working!!\n");

@@ -1,0 +1,1 @@
+void log(char* title, char *message, char *color);
