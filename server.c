@@ -47,8 +47,8 @@ void parseClientRequest(char *rawRequestData, RequestData *requestData){
     HeaderContent *headerContent;
     headerContent = malloc(sizeof(HeaderContent));
     initHeaderContent(&headerContent, rawRequestData);
-    log("process request from client\n-----------\n", rawRequestData, NULL);
-    log("process request from client\n-----------\n", rawRequestData, NULL);
+    logStr("process request from client\n-----------\n", rawRequestData, NULL);
+    logStr("process request from client\n-----------\n", rawRequestData, NULL);
 
     headerContent->requestSplittedLine = malloc(sizeof(char*) * 500);
     // todo create function for tear down Header whole content
@@ -150,7 +150,7 @@ int main(void)
 
     // this is initial size, content is realloc later
     char *httpContent = calloc(8000, sizeof(char));
-    size_t contentLength = 0;
+    size_t sentContentLength = 0;
     // Socket setup: creates an endpoint for communication, returns a descriptor
     // -----------------------------------------------------------------------------------------------------------------
     int serverSocket = socket(
@@ -201,13 +201,18 @@ int main(void)
     while(!done) {
         clientSocket = accept(serverSocket, NULL, NULL);
         char requestData[REQUEST_BUFFER_SIZE];
-        if(recv(clientSocket, requestData, REQUEST_BUFFER_SIZE, 0) < 0){
+        size_t receivedLength = recv(clientSocket, requestData, REQUEST_BUFFER_SIZE, 0);
+        
+        if(receivedLength < 0){
             puts("non response\n");
-            contentLength = 0;
+            sentContentLength = 0;
         }else{
-            contentLength = processRequestResponse(&httpContent, requestData);
+            sentContentLength = processRequestResponse(&httpContent, requestData);
         }
-        send(clientSocket, httpContent, contentLength, 0);
+        logStr("Content lengths", "--------------\n", "yellow");
+        logInt("Received length", receivedLength, "yellow");
+        logInt("Content size", sentContentLength, "yellow");
+        send(clientSocket, httpContent, sentContentLength, 0);
         memset(requestData, '\0', REQUEST_BUFFER_SIZE);
         cleanFileContent(&httpContent);
         close(clientSocket);
