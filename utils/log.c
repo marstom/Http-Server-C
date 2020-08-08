@@ -4,7 +4,7 @@
 #include <string.h>
 
 
-static void *setBufferColor(char* color){
+static void setBufferColor(char* color){
     if(color == NULL){/*do nothing*/}
     else if(!strcmp(color, "red")){
         printf("\033[0;31m");
@@ -29,7 +29,7 @@ void logInt(char* title, size_t message, char *color){
     setBufferColor(color);
     
     printf("%s\n", title);
-    printf("%d", message);
+    printf("%ld", message);
     puts("\033[0m");
 }
 

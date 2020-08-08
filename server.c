@@ -6,7 +6,8 @@
 volatile sig_atomic_t done = 0;
 
 void term(int signum){
-    done = 1;
+    if(signum == SIGINT)
+        done = 1;
 }
 
 void setBasicHeaders(char **httpContent, const char *contentType){
@@ -203,7 +204,7 @@ int main(void)
         char requestData[REQUEST_BUFFER_SIZE];
         size_t receivedLength = recv(clientSocket, requestData, REQUEST_BUFFER_SIZE, 0);
         
-        if(receivedLength < 0){
+        if(receivedLength == 0){
             puts("non response\n");
             sentContentLength = 0;
         }else{
