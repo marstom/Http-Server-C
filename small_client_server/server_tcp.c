@@ -34,10 +34,10 @@ nc localhost 8002
 #define MS_START_TRANSMISSION 3
 
 int 
-requestQueue(int serverFd, struct sockaddr_in peer_addr){
+requestQueue(int serverFd, struct sockaddr_in *clientaddr){
     int ok;
-    socklen_t peer_addr_size = sizeof(struct sockaddr_in);
-    serverFd = accept(serverFd, (struct sockaddr *)&peer_addr, &peer_addr_size);
+    socklen_t peer_addr_size;
+    serverFd = accept(serverFd, (struct sockaddr *)clientaddr, &peer_addr_size);
     if(setsockopt(serverFd, SOL_SOCKET, SO_REUSEADDR, &ok, sizeof(int)) == -1){
         handle_error("socketopt");
     }
@@ -82,28 +82,31 @@ main(){
     if(setsockopt(serverFd, SOL_SOCKET, SO_REUSEADDR, &ok, sizeof(int)) == -1){
         handle_error("socketopt");
     }
-    struct sockaddr_in my_addr, peer_addr;
-    memset(&my_addr, 0, sizeof(struct sockaddr_in));
+    struct sockaddr_in serveraddr;
+    struct sockaddr_in clientaddr;
     
-    my_addr.sin_family = AF_INET;
-    my_addr.sin_port = htons(8002);
-    my_addr.sin_addr.s_addr = INADDR_ANY;
+    memset(&serveraddr, 0, sizeof(serveraddr));
+    memset(&clientaddr, 0, sizeof(clientaddr));
     
-    if(bind(serverFd, (struct sockaddr *)&my_addr, sizeof(my_addr)) == -1){
+    serveraddr.sin_family = AF_INET;
+    serveraddr.sin_port = htons(8002);
+    serveraddr.sin_addr.s_addr = INADDR_ANY;
+    
+    if(bind(serverFd, (struct sockaddr *)&serveraddr, sizeof(serveraddr)) == -1){
         handle_error("bind");
     }
     if(listen(serverFd, 3) == -1){
         handle_error("listen");
     }
 
-    printf("PATH: %d\n", ntohs(my_addr.sin_port));
+    printf("PATH: %d\n", ntohs(serveraddr.sin_port));
     char buffer[200];
     char bufferSend[200];
     strcpy(bufferSend, "OK\r\n");
 
     
     while(!msCommand.shutdown){
-        newSockerFd = requestQueue(serverFd, peer_addr);
+        newSockerFd = requestQueue(serverFd, &clientaddr);
         msCommand.eof = false;
         while(!msCommand.eof){
             if(recv(newSockerFd, buffer, 200, 0) == -1){
@@ -116,6 +119,14 @@ main(){
             } 
             printf("%s", buffer);
             memset(buffer, '\0', 200);
+
+
+            puts("\n-----\n");
+            printf("Server info: %s:%d", inet_ntoa(serveraddr.sin_addr), htons(serveraddr.sin_port));
+            puts("\n-----\n");
+            puts("\n-----\n");
+            printf("Client info: %s:%d", inet_ntoa(clientaddr.sin_addr), htons(clientaddr.sin_port));
+            puts("\n-----\n");
         }
         
         close(newSockerFd);
