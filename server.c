@@ -1,11 +1,13 @@
 #include "server.h"
 #include "request_parser/request_parser.h"
 #include "utils/file_checker.h"
+#include "utils/log.h"
 
 volatile sig_atomic_t done = 0;
 
 void term(int signum){
-    done = 1;
+    if(signum == SIGINT)
+        done = 1;
 }
 
 void setBasicHeaders(char **httpContent, const char *contentType){
@@ -32,36 +34,45 @@ void setBasicHeaders(char **httpContent, const char *contentType){
 
 
 size_t processRequestResponse(char **httpContent, char *rawRequestData){
-    char *response = *httpContent;
+    RequestData *requestData = malloc(sizeof(RequestData));
+    parseClientRequest(rawRequestData, requestData);
+    size_t contentLength = prepareClientResponse(httpContent, requestData);
+    free(requestData);
+    //free(requestData->filename);
+    return contentLength;
 
-    puts("process request from client\n-----------\n");
-    size_t contentLength = 0;
+}
+
+
+void parseClientRequest(char *rawRequestData, RequestData *requestData){
     HeaderContent *headerContent;
     headerContent = malloc(sizeof(HeaderContent));
     initHeaderContent(&headerContent, rawRequestData);
-    puts(rawRequestData);
-    putchar('\n');
+    logStr("process request from client\n-----------\n", rawRequestData, NULL);
+    logStr("process request from client\n-----------\n", rawRequestData, NULL);
 
     headerContent->requestSplittedLine = malloc(sizeof(char*) * 500);
     // todo create function for tear down Header whole content
     getSplittedLine(headerContent, 0);
 
-    char* filename = calloc(100, sizeof(char));
-    strcat(filename, ".");
-    strcat(filename, headerContent->requestSplittedLine[1]);
-
-
-    puts(filename);
-    puts("-----------------\n");
+    // obtain filename
+    requestData->filename = calloc(100, sizeof(char));
+    strcat(requestData->filename, ".");
+    strcat(requestData->filename, headerContent->requestSplittedLine[1]);
+    puts(requestData->filename);
 
     //prepare response for client
     tearDownHeaderContent(&headerContent);
-    //binary types
-    if(isFileBinary(filename) == true){
-        if(strstr(filename, "png") != NULL || strstr(filename, "ico") != NULL){
+}
+
+size_t prepareClientResponse(char **httpContent, RequestData *requestData){
+    char *response = *httpContent;
+    size_t contentLength = 0;
+    if(isFileBinary(requestData->filename) == true){
+        if(strstr(requestData->filename, "png") != NULL || strstr(requestData->filename, "ico") != NULL){
             // Image handler
             setBasicHeaders(&response, CONTENT_PNG);
-            FILE *data = fopen(filename, "rb");
+            FILE *data = fopen(requestData->filename, "rb");
             if(data == NULL){
                 printf("File open status: %d\n", errno);
                 return 0;
@@ -83,14 +94,14 @@ size_t processRequestResponse(char **httpContent, char *rawRequestData){
             contentLength = responseLen + payloadLen;
         }
     } else { 
-        if(strstr(filename, "html") != NULL){
+        if(strstr(requestData->filename, "html") != NULL){
             setBasicHeaders(&response, CONTENT_HTML);
-        } else if(strstr(filename, "css") != NULL){
+        } else if(strstr(requestData->filename, "css") != NULL){
             setBasicHeaders(&response, CONTENT_CSS);
-        } else if(strstr(filename, "js") != NULL){
+        } else if(strstr(requestData->filename, "js") != NULL){
             setBasicHeaders(&response, CONTENT_JAVASCRIPT);
         }
-        FILE *data = fopen(filename, "r");
+        FILE *data = fopen(requestData->filename, "r");
         if(data == NULL){
             printf("File open status: %d\n", errno);
             return 0;
@@ -102,20 +113,10 @@ size_t processRequestResponse(char **httpContent, char *rawRequestData){
         fclose(data);
         contentLength = strlen(response);
     }
-    free(filename);
+    free(requestData->filename);
     (*httpContent) = response;
+    //(*response) = content;
     return contentLength;
-}
-
-
-void parseClientRequest(char *request){
-}
-
-void prepareClientResponse(char **response){
-    char *content = *response;
-    // setBasicHeaders(&content, CONTENT_HTML);
-    // strcat(content, "<h1>To ja</h1>");
-    (*response) = content;
 }
 
 void cleanFileContent(char **httpContent){
@@ -127,7 +128,7 @@ Cannot be in h file, don't know why
 */
 void report(struct sockaddr_in *serverAddress){
     char hostBuffer[INET6_ADDRSTRLEN];
-    char serviceBuffer[NI_MAXSERV]; // defined in `<netdb.h>`
+    char serviceBuffer[32]; // defined in `<netdb.h>`
     socklen_t addr_len = sizeof(*serverAddress);
     int err = getnameinfo(
         (struct sockaddr *) serverAddress,
@@ -136,7 +137,7 @@ void report(struct sockaddr_in *serverAddress){
         sizeof(hostBuffer),
         serviceBuffer,
         sizeof(serviceBuffer),
-        NI_NUMERICHOST
+        1
     );
     if (err != 0) {
         printf("It's not working!!\n");
@@ -150,7 +151,7 @@ int main(void)
 
     // this is initial size, content is realloc later
     char *httpContent = calloc(8000, sizeof(char));
-    size_t contentLength = 0;
+    size_t sentContentLength = 0;
     // Socket setup: creates an endpoint for communication, returns a descriptor
     // -----------------------------------------------------------------------------------------------------------------
     int serverSocket = socket(
@@ -158,7 +159,7 @@ int main(void)
         SOCK_STREAM,  // Type: specifies communication semantics
         0             // Protocol: 0 because there is a single protocol for the specified family
     );
-
+    int clientAddrSize;
     int _ok = 1;
     if(setsockopt(serverSocket, SOL_SOCKET,SO_REUSEADDR, &_ok, sizeof(int)) == -1){
         perror("Unable set socket options.");
@@ -170,9 +171,10 @@ int main(void)
     // Construct local address structure
     // -----------------------------------------------------------------------------------------------------------------
     struct sockaddr_in serverAddress;
+    struct sockaddr_in clientAddress;
     serverAddress.sin_family = AF_INET;
     serverAddress.sin_port = htons(8001);
-    serverAddress.sin_addr.s_addr = htonl(INADDR_LOOPBACK);//inet_addr("127.0.0.1");
+    serverAddress.sin_addr.s_addr = htonl(INADDR_LOOPBACK); // inet_addr("127.0.0.1");
 
     // Bind socket to local address
     // -----------------------------------------------------------------------------------------------------------------
@@ -188,10 +190,9 @@ int main(void)
     }
     // Mark socket to listen for incoming connections
     // -----------------------------------------------------------------------------------------------------------------
-    int listening = listen(serverSocket, BACKLOG);
-    if (listening < 0) {
-        printf("Error: The server is not listening.\n");
-        return 1;
+    if (listen(serverSocket, BACKLOG) == -1) {
+        perror("Error: The server is not listening.\n");
+        exit(1);
     }
     report(&serverAddress);     // Custom report function
     int clientSocket;
@@ -199,15 +200,24 @@ int main(void)
     // Wait for a connection, create a connected socket if a connection is pending
     // -----------------------------------------------------------------------------------------------------------------
     while(!done) {
-        clientSocket = accept(serverSocket, NULL, NULL);
+        clientAddrSize = sizeof(struct sockaddr_in);
+        clientSocket = accept(serverSocket, (struct sockaddr *)&clientAddress, (socklen_t*)&clientAddrSize);
         char requestData[REQUEST_BUFFER_SIZE];
-        if(recv(clientSocket, requestData, REQUEST_BUFFER_SIZE, 0) < 0){
+        size_t receivedLength = recv(clientSocket, requestData, REQUEST_BUFFER_SIZE, 0);
+        
+        if(receivedLength == 0){
             puts("non response\n");
-            contentLength = 0;
+            sentContentLength = 0;
         }else{
-            contentLength = processRequestResponse(&httpContent, requestData);
+            sentContentLength = processRequestResponse(&httpContent, requestData);
         }
-        send(clientSocket, httpContent, contentLength, 0);
+
+        logStr("Content lengths", "--------------\n", "yellow");
+        logInt("Received length", receivedLength, "yellow");
+        logInt("Content size", sentContentLength, "yellow");
+        logStr("Client IP", inet_ntoa(clientAddress.sin_addr), "yellow");
+        send(clientSocket, httpContent, sentContentLength, 0);
+        
         memset(requestData, '\0', REQUEST_BUFFER_SIZE);
         cleanFileContent(&httpContent);
         close(clientSocket);

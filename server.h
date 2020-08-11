@@ -32,6 +32,15 @@ const char *CONTENT_CSS = "text/css";
 const char *CONTENT_PNG = "image/png";
 const char *CONTENT_JPEG = "image/jpeg";
 
+/*
+FILE  - serve file
+STATUS - serve always index.html
+*/
+typedef struct {
+    char mode;
+    char *filename;
+}RequestData;
+
 /*Checking if file is binary type or not
 :return true- binary false-text file
 */
@@ -44,9 +53,9 @@ Process request and response
 size_t processRequestResponse(char **httpContent, char *buff);
 
 /*Parsing request use in future*/
-void parseClientRequest(char *request);
+void parseClientRequest(char *request, RequestData *requestData);
 /*Parsing response use in future*/
-void prepareClientResponse(char **response);
+size_t prepareClientResponse(char **response, RequestData *requestData);
 
 /*Working for text content only, not binary*/
 void cleanFileContent(char **httpContent);
