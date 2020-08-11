@@ -159,7 +159,7 @@ int main(void)
         SOCK_STREAM,  // Type: specifies communication semantics
         0             // Protocol: 0 because there is a single protocol for the specified family
     );
-
+    int clientAddrSize;
     int _ok = 1;
     if(setsockopt(serverSocket, SOL_SOCKET,SO_REUSEADDR, &_ok, sizeof(int)) == -1){
         perror("Unable set socket options.");
@@ -171,9 +171,10 @@ int main(void)
     // Construct local address structure
     // -----------------------------------------------------------------------------------------------------------------
     struct sockaddr_in serverAddress;
+    struct sockaddr_in clientAddress;
     serverAddress.sin_family = AF_INET;
     serverAddress.sin_port = htons(8001);
-    serverAddress.sin_addr.s_addr = htonl(INADDR_LOOPBACK);//inet_addr("127.0.0.1");
+    serverAddress.sin_addr.s_addr = htonl(INADDR_LOOPBACK); // inet_addr("127.0.0.1");
 
     // Bind socket to local address
     // -----------------------------------------------------------------------------------------------------------------
@@ -189,10 +190,9 @@ int main(void)
     }
     // Mark socket to listen for incoming connections
     // -----------------------------------------------------------------------------------------------------------------
-    int listening = listen(serverSocket, BACKLOG);
-    if (listening < 0) {
-        printf("Error: The server is not listening.\n");
-        return 1;
+    if (listen(serverSocket, BACKLOG) == -1) {
+        perror("Error: The server is not listening.\n");
+        exit(1);
     }
     report(&serverAddress);     // Custom report function
     int clientSocket;
@@ -200,7 +200,8 @@ int main(void)
     // Wait for a connection, create a connected socket if a connection is pending
     // -----------------------------------------------------------------------------------------------------------------
     while(!done) {
-        clientSocket = accept(serverSocket, NULL, NULL);
+        clientAddrSize = sizeof(struct sockaddr_in);
+        clientSocket = accept(serverSocket, (struct sockaddr *)&clientAddress, (socklen_t*)&clientAddrSize);
         char requestData[REQUEST_BUFFER_SIZE];
         size_t receivedLength = recv(clientSocket, requestData, REQUEST_BUFFER_SIZE, 0);
         
@@ -210,10 +211,13 @@ int main(void)
         }else{
             sentContentLength = processRequestResponse(&httpContent, requestData);
         }
+
         logStr("Content lengths", "--------------\n", "yellow");
         logInt("Received length", receivedLength, "yellow");
         logInt("Content size", sentContentLength, "yellow");
+        logStr("Client IP", inet_ntoa(clientAddress.sin_addr), "yellow");
         send(clientSocket, httpContent, sentContentLength, 0);
+        
         memset(requestData, '\0', REQUEST_BUFFER_SIZE);
         cleanFileContent(&httpContent);
         close(clientSocket);
