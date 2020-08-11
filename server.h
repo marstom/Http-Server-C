@@ -22,7 +22,7 @@
 
 
 #define REQUEST_BUFFER_SIZE 12000
-#define BACKLOG 10  // Passed to listen()
+#define BACKLOG 100  // Passed to listen()
 
 
 const char *CONTENT_JSON = "application/json";
