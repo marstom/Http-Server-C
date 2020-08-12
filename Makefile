@@ -2,7 +2,7 @@ CFLAGS=-I. -g -Wall -Wextra
 PRPD_CFLAGS=-o3 -Wall -Wextra
 OUT=marstom_server
 LIBS=
-CC=gcc
+CC=clang
 
 OBJ=server.o request_parser/request_parser.o utils/file_checker.o utils/log.o
 

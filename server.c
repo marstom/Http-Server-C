@@ -8,6 +8,7 @@ volatile sig_atomic_t done = 0;
 void term(int signum){
     if(signum == SIGINT)
         done = 1;
+        exit(1);
 }
 
 void setBasicHeaders(char **httpContent, const char *contentType){
@@ -145,13 +146,38 @@ void report(struct sockaddr_in *serverAddress){
     printf("\n\n\tServer listening on http://%s:%s\n", hostBuffer, serviceBuffer);
 }
 
+void handleConnection(HandleConnArgs *args){
+        char requestData[REQUEST_BUFFER_SIZE];
+        size_t sentContentLength = 0;
+        size_t receivedLength = recv(args->clientSocket, requestData, REQUEST_BUFFER_SIZE, 0);
+        
+        if(receivedLength == 0){
+            puts("non response\n");
+            sentContentLength = 0;
+        }else{
+            sentContentLength = processRequestResponse(&args->httpContent, requestData);
+        }
+
+        logStr("Content lengths", "--------------\n", "yellow");
+        logInt("Received length", receivedLength, "yellow");
+        logInt("Content size", sentContentLength, "yellow");
+        logStr("Client IP", inet_ntoa(args->clientAddress.sin_addr), "yellow");
+        send(args->clientSocket, args->httpContent, sentContentLength, 0);
+        
+        memset(requestData, '\0', REQUEST_BUFFER_SIZE);
+        cleanFileContent(&args->httpContent);
+        close(args->clientSocket);
+}
+
 int main(void)
 {
     signal(SIGINT ,term);
-
+    HandleConnArgs *args = malloc(sizeof(HandleConnArgs));
     // this is initial size, content is realloc later
     char *httpContent = calloc(8000, sizeof(char));
-    size_t sentContentLength = 0;
+
+    args->httpContent = httpContent;
+    
     // Socket setup: creates an endpoint for communication, returns a descriptor
     // -----------------------------------------------------------------------------------------------------------------
     int serverSocket = socket(
@@ -202,25 +228,16 @@ int main(void)
     while(!done) {
         clientAddrSize = sizeof(struct sockaddr_in);
         clientSocket = accept(serverSocket, (struct sockaddr *)&clientAddress, (socklen_t*)&clientAddrSize);
-        char requestData[REQUEST_BUFFER_SIZE];
-        size_t receivedLength = recv(clientSocket, requestData, REQUEST_BUFFER_SIZE, 0);
-        
-        if(receivedLength == 0){
-            puts("non response\n");
-            sentContentLength = 0;
-        }else{
-            sentContentLength = processRequestResponse(&httpContent, requestData);
-        }
+        args->clientSocket = clientSocket;
+        args->clientAddress = clientAddress;
+        //hancleConnection
+        handleConnection(args);
 
-        logStr("Content lengths", "--------------\n", "yellow");
-        logInt("Received length", receivedLength, "yellow");
-        logInt("Content size", sentContentLength, "yellow");
-        logStr("Client IP", inet_ntoa(clientAddress.sin_addr), "yellow");
-        send(clientSocket, httpContent, sentContentLength, 0);
-        
-        memset(requestData, '\0', REQUEST_BUFFER_SIZE);
-        cleanFileContent(&httpContent);
-        close(clientSocket);
+        //------------
+        // pthread_t t;
+        // int *pclient = malloc(sizeof(int));
+        // pclient = clientSocket;
+        // pthread_create(&t, NULL, handleConnection, pclient);
     }
     free(httpContent);
     close(serverSocket);

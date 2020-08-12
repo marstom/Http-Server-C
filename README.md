@@ -14,11 +14,12 @@ Features:
 - [x] Add dynamic memory allocation, now when image is bigger than 8000 bytes server will crash.
 - [x] Free allocated memory. Valgrind should show 0 lost bytes. Now there is dynamic memory allocation.
 - [x] Handle exceptions, when there's no such file avoid server crash.
-- [ ] Split process request to separate function.
-- [ ] Split process response to separate function.
+- [x] Split process request to separate function.
+- [x] Split process response to separate function.
 - [ ] Crete some unittests instead using driver program (main.c) for request parser.
 - [ ] Handle GET http method.
 - [ ] Handle POST http method.
 - [ ] Handle PUT http method.
 - [ ] Handle DELETE http method.
 - [ ] Handle cookies.
+- [ ] Add multithreading.

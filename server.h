@@ -20,6 +20,8 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+//thread
+#include <pthread.h>
 
 #define REQUEST_BUFFER_SIZE 12000
 #define BACKLOG 100  // Passed to listen()
@@ -41,6 +43,12 @@ typedef struct {
     char *filename;
 }RequestData;
 
+typedef struct {
+    int clientSocket;
+    char *httpContent;
+    struct sockaddr_in clientAddress;
+}HandleConnArgs;
+
 /*Checking if file is binary type or not
 :return true- binary false-text file
 */
@@ -59,3 +67,9 @@ size_t prepareClientResponse(char **response, RequestData *requestData);
 
 /*Working for text content only, not binary*/
 void cleanFileContent(char **httpContent);
+
+/*
+For multithreading, separate function for handle connection
+*/
+
+void handleConnection(HandleConnArgs *args);
