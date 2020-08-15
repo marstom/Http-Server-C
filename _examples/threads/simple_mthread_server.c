@@ -11,7 +11,7 @@
 #define SERVERPORT 8989
 #define BUFSIZE 4096
 #define SOCKETERROR (-1)
-#define SERVER_BACKLOG 1
+#define SERVER_BACKLOG 100
 
 typedef struct sockaddr_in SA_IN;
 typedef struct sockaddr SA;
