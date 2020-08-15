@@ -5,6 +5,7 @@
 
 # Compilation output
 *.o
+*.out
 server
 marstom_server
 a.out
