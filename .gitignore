@@ -5,6 +5,5 @@
 
 # Compilation output
 *.o
-server
-marstom_server
-a.out
+*.out
+tests/munit/

@@ -9,6 +9,7 @@ BASE_OBJ=obj
 clean:
 	rm -rf *.o *.out *.s tcpclient.out
 	rm -rf obj/*.o
+	rm -rf tests/*.o
 
 tcpclient: $(OBJS_CLIENT)
 	$(CC) $(CFLAGS) $(OBJS_CLIENT) -o tcpclient.out
@@ -21,5 +22,11 @@ obj/%.o: src/%.c
 
 
 install_dependencies:
-	mkdir munit
-	git clone https://github.com/nemequ/munit.git ./munit
+	mkdir ./tests/munit
+	git clone https://github.com/nemequ/munit.git ./tests/munit
+
+
+
+TESTCOMMON= tests/munit/munit.c  obj/common.o tests/test_common.o
+test_common: $(TESTCOMMON)
+	$(CC) $(CFLAGS) $(TESTCOMMON) -o test.out
