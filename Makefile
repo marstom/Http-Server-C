@@ -27,6 +27,6 @@ install_dependencies:
 
 
 
-TESTCOMMON= tests/munit/munit.c  obj/common.o tests/test_common.o
+TESTCOMMON= tests/munit/munit.c  obj/common.o tests/tests.o
 test_common: $(TESTCOMMON)
 	$(CC) $(CFLAGS) $(TESTCOMMON) -o test.out

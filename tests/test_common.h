@@ -1,3 +1,5 @@
+#pragma once
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -7,11 +9,19 @@
 
 static MunitResult
 test_bin2hex(const MunitParameter params[], void * data) {
-
+    char *out = bin2hex("Tomek", 5);
+    printf("\n%s\n", out);
+    munit_assert_string_equal(out, "54 6F 6D 65 6B ");
     return MUNIT_OK;
 }
 
-static MunitTest test_suite_tests[] = {
+
+
+
+
+
+// all tests list for this module here
+static MunitTest test_common_suite_tests[] = {
     {
         "/test_bin2hex",
         test_bin2hex,
@@ -30,16 +40,5 @@ static MunitTest test_suite_tests[] = {
     }
 };
 
-static
-const MunitSuite test_suite = {
-    "common",
-    test_suite_tests,
-    NULL, //suites
-    1, //iterations,
-    MUNIT_SUITE_OPTION_NONE // options
-};
 
-int main(int argc, char * argv[MUNIT_ARRAY_PARAM(argc + 1)]) {
-    return munit_suite_main( & test_suite, (void * )
-        "µnit", argc, argv);
-}
+

@@ -54,3 +54,7 @@ int main(){
     }
     return 0;
 }
+
+void handle_connection(int client_socket){
+    
+}
