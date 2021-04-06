@@ -1,27 +1,25 @@
-CFLAGS=-I. -g -Wall -Wextra
-PRPD_CFLAGS=-o3 -Wall -Wextra
-OUT=marstom_server
+CC=clang
+CFLAGS=-g -Wall
 LIBS=
-CC=gcc
+OBJS_CLIENT=obj/tcpclient.o obj/common.o
+OBJS_SERVER=obj/tcpserver.o obj/common.o
 
-OBJ=server.o request_parser/request_parser.o utils/file_checker.o utils/log.o
+BASE_OBJ=obj
 
-
-debug: ${OBJ}
-	${CC} ${OBJ} ${CFLAGS} -o ${OUT} ${LIBS}
-
-production: ${OBJ}
-	${CC} ${OBJ} ${PRPD_CFLAGS} -o ${OUT} ${LIBS}
-
-test: ${OBJ}
-	${CC} ${OBJ} ${CFLAGS} -o ${OUT} ${LIBS} && ./${OUT} && rm ./${OUT}
-
-valgrind: ${OBJ}
-	${CC} ${OBJ} ${CFLAGS} -o ${OUT} ${LIBS} && valgrind ./${OUT} && rm ./${OUT}
-
-
-cleano:
-	find . -type f -name '*.o' -delete
 clean:
-	rm ${OUT}
-	find . -type f -name '*.o' -delete
+	rm -rf *.o *.out *.s tcpclient.out
+	rm -rf obj/*.o
+
+tcpclient: $(OBJS_CLIENT)
+	$(CC) $(CFLAGS) $(OBJS_CLIENT) -o tcpclient.out
+
+tcpserver: $(OBJS_SERVER)
+	$(CC) $(CFLAGS) $(OBJS_SERVER) -o tcpserver.out
+
+obj/%.o: src/%.c
+	$(CC) $(CFLAGS) -c $< -o $@
+
+
+install_dependencies:
+	mkdir munit
+	git clone https://github.com/nemequ/munit.git ./munit
