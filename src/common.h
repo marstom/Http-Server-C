@@ -21,7 +21,10 @@
 
 #define SERVER_PORT 8080
 #define MAXLINE 4096
+#define SOCKETERROR (-1)
+#define SEVER_BACKLOG 1
 #define SA struct sockaddr
+#define SA_IN struct sockaddr_in
 
 
 void err_n_die(const char *fmt, ...);
