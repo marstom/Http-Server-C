@@ -4,13 +4,12 @@
 
 #include "common.h"
 
-
+void handle_connection(int client_socket);
 
 int main(){
-    int server_socket, client_socket, n, addr_size;
+    int server_socket, client_socket, addr_size;
     SA_IN server_addr, client_addr;
-    uint8_t buff[MAXLINE+1];
-    uint8_t recvline[MAXLINE+1];
+
 
     if((server_socket = socket(AF_INET, SOCK_STREAM, 0)) < 0)
         err_n_die("socket error.");
@@ -33,28 +32,31 @@ int main(){
         if(client_socket < 0)
             err_n_die("Accept failed!");
         printf("Connected!");
-        
-        memset(recvline, 0, MAXLINE);
+        handle_connection(client_socket);
 
-        while( (n= read(client_socket, recvline, MAXLINE - 1))  > 0){
-            fprintf(stdout, "\n%s\n\n%s", bin2hex(recvline, n), recvline);
-
-            //hacky way to detect end of request
-            if(recvline[n-1] == '\n')
-                break;
-            memset(recvline, 0, MAXLINE);
-        }
-        if(n <0)
-            err_n_die("read error");
-        
-        // response
-        snprintf((char*)buff, sizeof(buff), "HTTP/1.0 200 OK\r\n\r\nHello");
-        write(client_socket, (char*)buff, strlen((char *) buff));
-        close(client_socket);
     }
     return 0;
 }
 
 void handle_connection(int client_socket){
+    int n;
+    uint8_t buff[MAXLINE+1];
+    uint8_t recvline[MAXLINE+1];
+    memset(recvline, 0, MAXLINE);
 
+    while( (n= read(client_socket, recvline, MAXLINE - 1))  > 0){
+        fprintf(stdout, "\n%s\n\n%s", bin2hex(recvline, n), recvline);
+
+        //hacky way to detect end of request
+        if(recvline[n-1] == '\n')
+            break;
+        memset(recvline, 0, MAXLINE);
+    }
+    if(n <0)
+        err_n_die("read error");
+    
+    // response
+    snprintf((char*)buff, sizeof(buff), "HTTP/1.0 200 OK\r\n\r\nHello");
+    write(client_socket, (char*)buff, strlen((char *) buff));
+    close(client_socket);
 }
