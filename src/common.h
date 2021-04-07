@@ -21,6 +21,8 @@
 
 #define SERVER_PORT 8080
 #define MAXLINE 4096
+#define BUFSIZE 4096
+#define PATH_MAX 255
 #define SOCKETERROR (-1)
 #define SEVER_BACKLOG 1
 #define SA struct sockaddr

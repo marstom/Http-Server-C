@@ -39,24 +39,39 @@ int main(){
 }
 
 void handle_connection(int client_socket){
+    char buffer[BUFSIZE];
     size_t bytes_read;
-    uint8_t buff[MAXLINE+1];
-    uint8_t recvline[MAXLINE+1];
-    memset(recvline, 0, MAXLINE);
+    int msgsize = 0;
+    char actualpath[PATH_MAX+1];
 
-    while( (bytes_read= read(client_socket, recvline, MAXLINE - 1))  > 0){
-        fprintf(stdout, "\n%s\n\n%s", bin2hex(recvline, bytes_read), recvline);
-
-        //hacky way to detect end of request
-        if(recvline[bytes_read-1] == '\n')
-            break;
-        memset(recvline, 0, MAXLINE);
+    while((bytes_read=read(client_socket, buffer+msgsize, sizeof(buffer)-msgsize-1)) > 0){
+        msgsize += bytes_read;
+        if(msgsize > BUFSIZE-1 || buffer[msgsize-1] == '\n') break;
     }
-    if(bytes_read <0)
-        err_n_die("read error");
-    
-    // response
-    snprintf((char*)buff, sizeof(buff), "HTTP/1.0 200 OK\r\n\r\nHello");
-    write(client_socket, (char*)buff, strlen((char *) buff));
+    if(bytes_read < 0)
+        err_n_die("recv error");
+    buffer[msgsize-1] = 0;
+    printf("REQUEST: %s\n", buffer);
+    fflush(stdout);
+
+    // validity check
+    if(realpath(buffer, actualpath) == NULL){
+        printf("ERROR(bad path): %s\n", buffer);
+        close(client_socket);
+        return;
+    }
+    FILE *fp = fopen(actualpath, "r");
+    if(fp==NULL){
+        printf("ERROR(open): %s\n", buffer);
+        close(client_socket);
+        return;
+    }
+
+    while((bytes_read = fread(buffer, 1, BUFSIZE, fp)) > 0){
+        printf("sending %zu bytes\n", bytes_read);
+        write(client_socket, buffer, bytes_read);
+    }
     close(client_socket);
+    fclose(fp);
+    printf("closing connection\n");
 }

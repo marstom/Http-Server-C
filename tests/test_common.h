@@ -15,7 +15,11 @@ test_bin2hex(const MunitParameter params[], void * data) {
     return MUNIT_OK;
 }
 
+static MunitResult
+test_err_n_die(const MunitParameter params[], void * data) {
 
+    return MUNIT_OK;
+}
 
 
 
@@ -25,6 +29,14 @@ static MunitTest test_common_suite_tests[] = {
     {
         "/test_bin2hex",
         test_bin2hex,
+        NULL, // setup
+        NULL, //tear down
+        MUNIT_TEST_OPTION_NONE, // options
+        NULL // params
+    },
+    {
+        "/test_err_n_die",
+        test_err_n_die,
         NULL, // setup
         NULL, //tear down
         MUNIT_TEST_OPTION_NONE, // options
