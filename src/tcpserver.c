@@ -1,15 +1,28 @@
-#include "common.h"
 #include <pthread.h>
 
+#include "common.h"
+#include "queue.h"
+
+
 #define MULTITHREAD 1
+#define THREAD_POOL_SIZE 20
 #define DEBUG
 
+pthread_t thread_pool[THREAD_POOL_SIZE];
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+
 void *handle_connection(void* p_client_socket);
+void *thread_function(void *arg);
 
 int main(){
     int server_socket, client_socket, addr_size;
     SA_IN server_addr, client_addr;
 
+    // first create bunch of thread functions to handle future connections
+    for(int i = 0; i < THREAD_POOL_SIZE; i++){
+        pthread_create(&thread_pool[i], NULL, thread_function, NULL);
+    }
+    
 
     if((server_socket = socket(AF_INET, SOCK_STREAM, 0)) < 0)
         err_n_die("socket error.");
@@ -41,8 +54,11 @@ int main(){
         *pclient = client_socket;    
         if(MULTITHREAD){
             /* multithreading server mode */
-            pthread_t t;
-            pthread_create(&t, NULL, handle_connection, pclient);
+            // pthread_t t;
+            pthread_mutex_lock(&mutex);
+            enqueue(pclient);
+            pthread_mutex_unlock(&mutex);
+            // pthread_create(&t, NULL, handle_connection, pclient);
         }else{
             /* single thread server mode */
             printf("SINGLE\n");
@@ -95,4 +111,19 @@ void *handle_connection(void* p_client_socket){
     fclose(fp);
     printf("closing connection\n");
     return NULL;
+}
+
+
+void *thread_function(void *arg){
+    /*Constantly checking if threre is more work, but burn CPU*/
+    while (true){
+        pthread_mutex_lock(&mutex);
+        int *pclient = dequeue(); // race condition is possible! Need to protect it.
+        pthread_mutex_unlock(&mutex);
+        
+        if (pclient != NULL){
+            handle_connection(pclient);
+        }
+    }
+    
 }
