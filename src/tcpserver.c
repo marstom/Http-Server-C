@@ -1,6 +1,10 @@
 #include "common.h"
+#include <pthread.h>
 
-void handle_connection(int client_socket);
+#define MULTITHREAD 1
+#define DEBUG
+
+void *handle_connection(void* p_client_socket);
 
 int main(){
     int server_socket, client_socket, addr_size;
@@ -32,13 +36,26 @@ int main(){
         if(client_socket < 0)
             err_n_die("Accept failed!");
         printf("Connected!");
-        handle_connection(client_socket);
+
+        int *pclient = malloc(sizeof(int));
+        *pclient = client_socket;    
+        if(MULTITHREAD){
+            /* multithreading server mode */
+            pthread_t t;
+            pthread_create(&t, NULL, handle_connection, pclient);
+        }else{
+            /* single thread server mode */
+            printf("SINGLE\n");
+            handle_connection(pclient);
+        }
 
     }
     return 0;
 }
 
-void handle_connection(int client_socket){
+void *handle_connection(void* p_client_socket){
+    int client_socket = *((int*)p_client_socket);
+    free(p_client_socket);
     char buffer[BUFSIZE];
     size_t bytes_read;
     int msgsize = 0;
@@ -58,13 +75,16 @@ void handle_connection(int client_socket){
     if(realpath(buffer, actualpath) == NULL){
         printf("ERROR(bad path): %s\n", buffer);
         close(client_socket);
-        return;
+        return NULL;
     }
+    #ifdef DEBUG
+    sleep(1); // very slow file access, simulate really slow HDD
+    #endif
     FILE *fp = fopen(actualpath, "r");
     if(fp==NULL){
         printf("ERROR(open): %s\n", buffer);
         close(client_socket);
-        return;
+        return NULL;
     }
 
     while((bytes_read = fread(buffer, 1, BUFSIZE, fp)) > 0){
@@ -74,4 +94,5 @@ void handle_connection(int client_socket){
     close(client_socket);
     fclose(fp);
     printf("closing connection\n");
+    return NULL;
 }

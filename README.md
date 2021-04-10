@@ -22,3 +22,10 @@ Features:
 - [ ] Handle PUT http method.
 - [ ] Handle DELETE http method.
 - [ ] Handle cookies.
+
+
+
+
+## Test result
+
+- 4.78s - 48.7s on thread 

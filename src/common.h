@@ -24,7 +24,7 @@
 #define BUFSIZE 4096
 #define PATH_MAX 255
 #define SOCKETERROR (-1)
-#define SEVER_BACKLOG 100 // server requests queue
+#define SEVER_BACKLOG 1 // server requests queue
 #define SA struct sockaddr
 #define SA_IN struct sockaddr_in
 
