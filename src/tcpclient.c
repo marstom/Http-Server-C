@@ -1,10 +1,3 @@
-/*
-
-https://www.youtube.com/watch?v=bdIiTxtMaKA&t=0s&ab_channel=JacobSorber
-
-
-*/
-
 #include "common.h"
 
 int main(int argc, char **argv){

@@ -1,7 +1,3 @@
-// TODO
-
-
-
 #include "common.h"
 
 void handle_connection(int client_socket);
@@ -13,6 +9,10 @@ int main(){
 
     if((server_socket = socket(AF_INET, SOCK_STREAM, 0)) < 0)
         err_n_die("socket error.");
+    
+    int _ok = 1;
+    if(setsockopt(server_socket, SOL_SOCKET,SO_REUSEADDR, &_ok, sizeof(int)) < 0)
+        err_n_die("unable to set SO_REUSEADDR option.");
     
     bzero(&server_addr, sizeof(server_addr));
     server_addr.sin_family = AF_INET;
