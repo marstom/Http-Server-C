@@ -2,7 +2,7 @@ CC=clang
 CFLAGS=-g -Wall
 LIBS=-lpthread
 OBJS_CLIENT=obj/tcpclient.o obj/common.o
-OBJS_SERVER=obj/tcpserver.o obj/common.o
+OBJS_SERVER=obj/tcpserver.o obj/common.o obj/queue.o
 
 BASE_OBJ=obj
 
