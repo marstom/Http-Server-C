@@ -23,7 +23,7 @@ test_err_n_die(const MunitParameter params[], void * data) {
 
 
 
-int)
+
 // all tests list for this module here
 static MunitTest test_common_suite_tests[] = {
     {
