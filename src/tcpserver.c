@@ -7,9 +7,11 @@
 #define MULTITHREAD 1
 #define THREAD_POOL_SIZE 20
 #define DEBUG
+#define CONDITION_VAR
 
 pthread_t thread_pool[THREAD_POOL_SIZE];
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t condition_var = PTHREAD_COND_INITIALIZER;
 
 void *handle_connection(void* p_client_socket);
 void *thread_function(void *arg);
@@ -54,10 +56,15 @@ int main(){
         *pclient = client_socket;    
         if(MULTITHREAD){
             /* multithreading server mode */
-            // pthread_t t;
+            
             pthread_mutex_lock(&mutex);
             enqueue(pclient);
+            #ifdef CONDITION_VAR
+            pthread_cond_signal(&condition_var);
+            #endif
             pthread_mutex_unlock(&mutex);
+            // #1 solution with unlimited threads
+            // pthread_t t;
             // pthread_create(&t, NULL, handle_connection, pclient);
         }else{
             /* single thread server mode */
@@ -113,7 +120,7 @@ void *handle_connection(void* p_client_socket){
     return NULL;
 }
 
-
+#ifndef CONDITION_VAR
 void *thread_function(void *arg){
     /*Constantly checking if threre is more work, but burn CPU*/
     while (true){
@@ -127,3 +134,25 @@ void *thread_function(void *arg){
     }
     
 }
+#else
+/*
+Handle thread with condition thread sellp
+*/
+void *thread_function(void *arg){
+    while (true){
+        int *pclient;
+        pthread_mutex_lock(&mutex);
+        if((pclient = dequeue()) == NULL){
+            pthread_cond_wait(&condition_var, &mutex);
+            // try again
+            pclient = dequeue();
+        }
+        pthread_mutex_unlock(&mutex);
+        
+        if (pclient != NULL){
+            handle_connection(pclient);
+        }
+    }
+    
+}
+#endif
